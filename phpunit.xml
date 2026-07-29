@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/10.5/phpunit.xsd"
+         bootstrap="tests/bootstrap.php"
+         colors="true"
+         executionOrder="depends,defects"
+         beStrictAboutOutputDuringTests="true"
+         failOnRisky="true"
+         failOnWarning="true"
+         cacheDirectory=".phpunit.cache"
+         requireCoverageMetadata="true"
+         beStrictAboutCoverageMetadata="true">
+    
+    <testsuites>
+        <testsuite name="AdminOffboard Test Suite">
+            <directory>tests</directory>
+        </testsuite>
+    </testsuites>
+
+    <coverage>
+        <include>
+            <directory suffix=".php">lib</directory>
+        </include>
+        <exclude>
+            <directory suffix=".php">lib/Migration</directory>
+            <file>lib/AppInfo/Application.php</file>
+        </exclude>
+        <report>
+            <html outputDirectory="coverage" />
+            <text outputFile="coverage.txt" />
+        </report>
+    </coverage>
+
+    <php>
+        <env name="APP_NAME" value="adminoffboard"/>
+        <env name="APP_ENV" value="test"/>
+        <env name="NEXTCLOUD_VERSION" value="34.0.2"/>
+        <env name="PHPUNIT_PRINT_JSON" value="false"/>
+        <server name="REMOTE_ADDR" value="127.0.0.1"/>
+        <server name="SERVER_NAME" value="localhost"/>
+        <server name="SERVER_PORT" value="8080"/>
+    </php>
+
+    <source>
+        <include>
+            <directory suffix=".php">lib</directory>
+        </include>
+        <exclude>
+            <directory suffix=".php">lib/Migration</directory>
+            <file>lib/AppInfo/Application.php</file>
+        </exclude>
+    </source>
+
+    <groups>
+        <exclude>
+            <group>integration</group>
+            <group>performance</group>
+        </exclude>
+    </groups>
+</phpunit>

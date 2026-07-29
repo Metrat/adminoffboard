@@ -1,0 +1,54 @@
+{
+  "name": "metrat/adminoffboard",
+  "type": "nextcloud-app",
+  "description": "Advanced admin tool for mass device token management, user offboarding, and remote wipe",
+  "keywords": ["nextcloud", "admin", "security", "offboarding", "remote-wipe"],
+  "homepage": "https://github.com/Metrat/adminoffboard",
+  "license": "AGPL-3.0-or-later",
+  "authors": [
+    {
+      "name": "Metrat",
+      "email": "disparam@gmail.com",
+      "role": "Developer"
+    }
+  ],
+  "support": {
+    "issues": "https://github.com/Metrat/adminoffboard/issues",
+    "source": "https://github.com/Metrat/adminoffboard"
+  },
+  "require": {
+    "php": "^8.2",
+    "ext-json": "*",
+    "ext-pdo": "*"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^10.5",
+    "squizlabs/php_codesniffer": "^3.10",
+    "phpstan/phpstan": "^1.10",
+    "psalm/phar": "^5.24"
+  },
+  "autoload": {
+    "psr-4": {
+      "OCA\\AdminOffboard\\": "lib/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "OCA\\AdminOffboard\\Tests\\": "tests/"
+    }
+  },
+  "scripts": {
+    "cs:check": "phpcs --standard=PSR12 --extensions=php lib/ appinfo/",
+    "cs:fix": "phpcbf --standard=PSR12 --extensions=php lib/ appinfo/",
+    "phpstan": "phpstan analyse --level=8 lib/",
+    "psalm": "psalm --config=psalm.xml",
+    "test": "phpunit --configuration phpunit.xml",
+    "test:coverage": "phpunit --configuration phpunit.xml --coverage-html coverage/"
+  },
+  "config": {
+    "platform": {
+      "php": "8.2"
+    }
+  },
+  "minimum-stability": "stable"
+}

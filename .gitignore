@@ -1,6 +1,75 @@
+# Composer
+vendor/
+composer.lock
 composer.phar
-/vendor/
 
-# Commit your application's lock file https://getcomposer.org/doc/01-basic-usage.md#commit-your-composer-lock-file-to-version-control
-# You may choose to ignore a library lock file http://getcomposer.org/doc/02-libraries.md#lock-file
-# composer.lock
+# Build and distribution
+build/
+dist/
+*.tar.gz
+*.zip
+
+# IDE and OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# Test and coverage
+coverage/
+.phpunit.cache
+.phpunit.result.cache
+*.log
+
+# Node.js
+node_modules/
+package-lock.json
+yarn.lock
+
+# PHP
+*.cache
+*.php.cache
+.phpcs-cache
+
+# Static analysis
+phpstan.neon
+psalm.xml
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Nextcloud
+tests/integration/data/
+tests/acceptance/data/
+tests/cypress/videos/
+tests/cypress/screenshots/
+
+# Development
+.phan/
+.cache/
+tmp/
+
+# Database
+*.sqlite
+*.sqlite-journal
+
+# Temporary files
+*.tmp
+*.bak
+*.orig
+*.rej
+
+# Logs
+logs/
+error_log
+access_log
+
+# Configuration
+config.php
+config.json
+.local

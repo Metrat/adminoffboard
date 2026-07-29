@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<info xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="https://apps.nextcloud.com/schema/apps/info.xsd">
+    <id>adminoffboard</id>
+    <name>Admin Offboard</name>
+    <summary>Advanced administration tool for mass user offboarding and device management</summary>
+    <description>
+        <![CDATA[
+        Admin Offboard provides enterprise-grade user offboarding capabilities for Nextcloud administrators.
+        
+        ## Features
+        - **Mass Device Token Management**: Delete all device tokens for users in bulk
+        - **Remote Wipe**: Support for compatible clients to perform remote device wipes
+        - **Mass User Disable**: Batch disable user accounts
+        - **Queue System**: Async operations for large-scale actions
+        - **Dry Run Mode**: Test operations before execution
+        - **Audit Trail**: Comprehensive action logging
+        - **Workflow Engine**: Customizable operation workflows
+        - **Driver Layer**: Extensible device type support
+        
+        ## Security
+        - All operations require admin privileges
+        - Idempotent operations for safety
+        - Full audit logging
+        - Only uses public OCP API
+        ]]>
+    </description>
+    <version>0.1.0</version>
+    <licence>agpl</licence>
+    <author mail="disparam@gmail.com" homepage="https://github.com/Metrat">Metrat</author>
+    
+    <namespace>AdminOffboard</namespace>
+    
+    <category>admin</category>
+    <category>security</category>
+    <category>tools</category>
+    
+    <website>https://github.com/Metrat/adminoffboard</website>
+    <bugs>https://github.com/Metrat/adminoffboard/issues</bugs>
+    <repository>https://github.com/Metrat/adminoffboard.git</repository>
+    
+    <screenshot>https://raw.githubusercontent.com/Metrat/adminoffboard/main/screenshots/dashboard.png</screenshot>
+    <screenshot>https://raw.githubusercontent.com/Metrat/adminoffboard/main/screenshots/bulk-operations.png</screenshot>
+    
+    <dependencies>
+        <php min-version="8.2" max-version="8.4"/>
+        <nextcloud min-version="26" max-version="34"/>
+    </dependencies>
+    
+    <background-jobs>
+        <job>OCA\AdminOffboard\BackgroundJob\ProcessQueueJob</job>
+        <job>OCA\AdminOffboard\BackgroundJob\CleanupAuditLogJob</job>
+    </background-jobs>
+    
+    <repair-steps>
+        <install>
+            <step>OCA\AdminOffboard\Migration\InstallRepairStep</step>
+        </install>
+        <uninstall>
+            <step>OCA\AdminOffboard\Migration\UninstallRepairStep</step>
+        </uninstall>
+        <pre-migration>
+            <step>OCA\AdminOffboard\Migration\PreMigrationRepairStep</step>
+        </pre-migration>
+        <post-migration>
+            <step>OCA\AdminOffboard\Migration\PostMigrationRepairStep</step>
+        </post-migration>
+    </repair-steps>
+    
+    <settings>
+        <admin>OCA\AdminOffboard\Settings\AdminSettings</admin>
+        <admin-section>OCA\AdminOffboard\Settings\AdminSection</admin-section>
+    </settings>
+    
+    <activity>
+        <filters>
+            <filter>OCA\AdminOffboard\Activity\Filter</filter>
+        </filters>
+        <settings>
+            <setting>OCA\AdminOffboard\Activity\Setting</setting>
+        </settings>
+        <providers>
+            <provider>OCA\AdminOffboard\Activity\Provider</provider>
+        </providers>
+    </activity>
+</info>
