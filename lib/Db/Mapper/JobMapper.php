@@ -27,7 +27,6 @@ namespace OCA\AdminOffboard\Db\Mapper;
 
 use OCA\AdminOffboard\Db\Entity\Job;
 use OCP\AppFramework\Db\QBMapper;
-use OCP\DB\Connection;
 use OCP\IDBConnection;
 use OCP\DB\QueryBuilder\IQueryBuilder;
 
@@ -39,8 +38,7 @@ class JobMapper extends QBMapper
     public const TABLE_NAME = 'adminoffboard_jobs';
 
     public function __construct(
-        IDBConnection $db,
-        private Connection $connection
+        IDBConnection $db
     ) {
         parent::__construct($db, self::TABLE_NAME, Job::class);
     }

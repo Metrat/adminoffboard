@@ -25,19 +25,16 @@ declare(strict_types=1);
 
 namespace OCA\AdminOffboard\Command;
 
-use OCA\AdminOffboard\Queue\QueueManager;
-use OCP\AppFramework\Console\Command;
+use OCA\AdminOffboard\Queue\JobProcessor;
+use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
-/**
- * OCC command to process the queue
- */
 class ProcessQueue extends Command
 {
     public function __construct(
-        private QueueManager $queueManager
+        private JobProcessor $jobProcessor
     ) {
         parent::__construct();
     }
@@ -46,131 +43,43 @@ class ProcessQueue extends Command
     {
         $this
             ->setName('adminoffboard:process-queue')
-            ->setDescription('Process jobs from the queue')
+            ->setDescription('Process pending offboarding queue jobs')
             ->addOption(
                 'limit',
                 'l',
-                InputOption::VALUE_REQUIRED,
-                'Maximum number of jobs to process (default: unlimited)',
-                null
-            )
-            ->addOption(
-                'batch',
-                'b',
-                InputOption::VALUE_REQUIRED,
-                'Number of jobs per batch (default: 10)',
+                InputOption::VALUE_OPTIONAL,
+                'Maximum number of jobs to process',
                 10
             )
             ->addOption(
-                'recover',
-                'r',
-                InputOption::VALUE_NONE,
-                'Recover stale jobs before processing'
-            )
-            ->addOption(
-                'once',
-                'o',
-                InputOption::VALUE_NONE,
-                'Process only one job and exit'
-            )
-            ->addOption(
-                'watch',
-                'w',
-                InputOption::VALUE_NONE,
-                'Watch mode - continuously process jobs'
+                'job-id',
+                'j',
+                InputOption::VALUE_OPTIONAL,
+                'Process specific job ID'
             );
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $limit = $input->getOption('limit');
-        $batchSize = (int)$input->getOption('batch');
-        $recover = (bool)$input->getOption('recover');
-        $once = (bool)$input->getOption('once');
-        $watch = (bool)$input->getOption('watch');
+        $limit = (int) $input->getOption('limit');
+        $jobId = $input->getOption('job-id');
 
-        // Show queue stats
-        $stats = $this->queueManager->getStats();
-        $output->writeln('<info>Queue Status:</info>');
-        $output->writeln("  Pending: {$stats['pending']}");
-        $output->writeln("  Processing: {$stats['processing']}");
-        $output->writeln("  Completed: {$stats['completed']}");
-        $output->writeln("  Failed: {$stats['failed']}");
-        $output->writeln("  Cancelled: {$stats['cancelled']}");
-
-        // Recover stale jobs
-        if ($recover) {
-            $output->writeln("\n<info>Recovering stale jobs...</info>");
-            $recovered = $this->queueManager->recoverStaleJobs();
-            $output->writeln("<info>Recovered $recovered stale jobs</info>");
-        }
-
-        // Process once
-        if ($once) {
-            $output->writeln("\n<info>Processing one job...</info>");
-            $processed = $this->queueManager->processNextJob();
-            if ($processed) {
-                $output->writeln('<info>✓ Job processed successfully</info>');
+        try {
+            if ($jobId) {
+                $this->jobProcessor->processJob((int) $jobId);
+                $output->writeln(sprintf('<info>Job %d processed successfully</info>', $jobId));
             } else {
-                $output->writeln('<comment>No pending jobs found</comment>');
+                $processed = $this->jobProcessor->processPendingJobs($limit);
+                $output->writeln(sprintf(
+                    '<info>Processed %d pending jobs</info>',
+                    $processed
+                ));
             }
-            
-            // Show updated stats
-            $stats = $this->queueManager->getStats();
-            $output->writeln("\n<info>Updated Queue Status:</info>");
-            $output->writeln("  Pending: {$stats['pending']}");
-            $output->writeln("  Processing: {$stats['processing']}");
-            
-            return 0;
+
+            return Command::SUCCESS;
+        } catch (\Exception $e) {
+            $output->writeln('<error>Error processing queue: ' . $e->getMessage() . '</error>');
+            return Command::FAILURE;
         }
-
-        // Watch mode
-        if ($watch) {
-            $output->writeln("\n<info>Watch mode enabled. Processing jobs continuously...</info>");
-            $output->writeln("<comment>Press Ctrl+C to stop</comment>");
-            
-            $iteration = 0;
-            while (true) {
-                $iteration++;
-                $processed = $this->queueManager->processJobs($batchSize);
-                
-                if ($processed === 0) {
-                    $output->writeln("<comment>No pending jobs. Waiting 10 seconds...</comment>");
-                    sleep(10);
-                    continue;
-                }
-                
-                $output->writeln("<info>Processed $processed jobs in batch $iteration</info>");
-                
-                // Check if we've reached the limit
-                if ($limit !== null && $iteration >= (int)$limit) {
-                    $output->writeln("<comment>Reached limit of $limit iterations. Stopping.</comment>");
-                    break;
-                }
-                
-                // Small delay between batches
-                usleep(100000); // 0.1 seconds
-            }
-            
-            return 0;
-        }
-
-        // Normal processing
-        $output->writeln("\n<info>Processing queue...</info>");
-        
-        $maxJobs = $limit !== null ? (int)$limit : 0;
-        $processed = $this->queueManager->processAll($maxJobs);
-        
-        $output->writeln("<info>✓ Processed $processed jobs</info>");
-
-        // Show updated stats
-        $stats = $this->queueManager->getStats();
-        $output->writeln("\n<info>Updated Queue Status:</info>");
-        $output->writeln("  Pending: {$stats['pending']}");
-        $output->writeln("  Processing: {$stats['processing']}");
-        $output->writeln("  Completed: {$stats['completed']}");
-        $output->writeln("  Failed: {$stats['failed']}");
-
-        return 0;
     }
 }

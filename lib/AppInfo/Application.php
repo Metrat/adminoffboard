@@ -166,7 +166,7 @@ class Application extends App implements IBootstrap
         });
 
         // Register OCC commands
-        $context->registerService(\OCA\AdminOffboard\Command\TestCommand::class);
+       
     }
 
     public function boot(IBootContext $context): void

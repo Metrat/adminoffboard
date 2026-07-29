@@ -20,4 +20,13 @@
         <php min-version="8.2"/>
         <nextcloud min-version="26" max-version="34"/>
     </dependencies>
+    <commands>
+        <command>OCA\AdminOffboard\Command\TestCommand</command>
+        <command>OCA\AdminOffboard\Command\OffboardUser</command>
+        <command>OCA\AdminOffboard\Command\DisableUsers</command>
+        <command>OCA\AdminOffboard\Command\DeleteTokens</command>
+        <command>OCA\AdminOffboard\Command\RemoteWipe</command>
+        <command>OCA\AdminOffboard\Command\CleanupAuditLogs</command>
+        <command>OCA\AdminOffboard\Command\ProcessQueue</command>
+    </commands>
 </info>

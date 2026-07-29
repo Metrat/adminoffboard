@@ -26,23 +26,15 @@ declare(strict_types=1);
 namespace OCA\AdminOffboard\Command;
 
 use OCA\AdminOffboard\Adapter\NextcloudAdapter;
-use OCA\AdminOffboard\Audit\AuditLogger;
-use OCA\AdminOffboard\Queue\QueueManager;
-use OCP\AppFramework\Console\Command;
+use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Console\Question\ConfirmationQuestion;
 
-/**
- * OCC command to disable multiple users
- */
 class DisableUsers extends Command
 {
     public function __construct(
-        private NextcloudAdapter $adapter,
-        private AuditLogger $auditLogger,
-        private QueueManager $queueManager
+        private NextcloudAdapter $adapter
     ) {
         parent::__construct();
     }
@@ -50,13 +42,13 @@ class DisableUsers extends Command
     protected function configure(): void
     {
         $this
-            ->setName('adminoffboard:disable-users')
-            ->setDescription('Disable multiple user accounts in bulk')
+            ->setName('adminoffboard:users:disable')
+            ->setDescription('Disable user accounts')
             ->addOption(
-                'users',
+                'user',
                 'u',
                 InputOption::VALUE_REQUIRED,
-                'Comma-separated list of user IDs to disable'
+                'User ID to disable'
             )
             ->addOption(
                 'file',
@@ -78,7 +70,7 @@ class DisableUsers extends Command
             )
             ->addOption(
                 'force',
-                'f',
+                null,
                 InputOption::VALUE_NONE,
                 'Skip confirmation prompt'
             );
@@ -86,187 +78,53 @@ class DisableUsers extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        // Get user list
-        $userIds = $this->getUserList($input, $output);
-        if (empty($userIds)) {
-            $output->writeln('<error>No users specified. Use --users or --file option.</error>');
-            return 1;
-        }
+        $userId = $input->getOption('user');
+        $file = $input->getOption('file');
+        $dryRun = $input->getOption('dry-run');
+        $queue = $input->getOption('queue');
+        $force = $input->getOption('force');
 
-        $dryRun = (bool)$input->getOption('dry-run');
-        $queue = (bool)$input->getOption('queue');
-        $force = (bool)$input->getOption('force');
-
-        // Validate users
-        $validUsers = [];
-        $invalidUsers = [];
-        foreach ($userIds as $userId) {
-            if ($this->adapter->userExists($userId)) {
-                $validUsers[] = $userId;
-            } else {
-                $invalidUsers[] = $userId;
-            }
-        }
-
-        if (empty($validUsers)) {
-            $output->writeln('<error>No valid users found.</error>');
-            return 1;
-        }
-
-        // Show summary
-        $output->writeln('<info>Disabling ' . count($validUsers) . ' users</info>');
-        if (!empty($invalidUsers)) {
-            $output->writeln('<comment>Skipping ' . count($invalidUsers) . ' invalid users</comment>');
-        }
-        if ($dryRun) {
-            $output->writeln('<comment>DRY RUN MODE: No changes will be made</comment>');
-        }
-        if ($queue) {
-            $output->writeln('<comment>Operation will be queued for background processing</comment>');
-        }
-
-        // Show users
-        $output->writeln("\n<info>Users to disable:</info>");
-        foreach ($validUsers as $userId) {
-            $output->writeln("  - $userId");
-        }
-        $output->writeln('');
-
-        // Confirm
-        if (!$force && !$dryRun) {
-            $helper = $this->getHelper('question');
-            $question = new ConfirmationQuestion(
-                '<question>Proceed with disabling ' . count($validUsers) . ' users? (y/N) </question>',
-                false
-            );
-            if (!$helper->ask($input, $output, $question)) {
-                $output->writeln('<comment>Operation cancelled.</comment>');
-                return 0;
-            }
-        }
-
-        // Queue the operation if requested
-        if ($queue) {
-            $job = $this->queueManager->createDisableUsersJob(
-                $validUsers,
-                'occ'
-            );
-            
-            $output->writeln('<info>Job queued successfully. Job ID: ' . $job->getId() . '</info>');
-            return 0;
-        }
-
-        // Perform disable
         try {
-            if ($dryRun) {
-                foreach ($validUsers as $userId) {
-                    $output->writeln("<comment>DRY RUN: User '$userId' would be disabled</comment>");
+            if ($userId) {
+                if (!$force) {
+                    $output->writeln(sprintf('<comment>WARNING: This will disable user: %s</comment>', $userId));
+                    $output->writeln('<comment>Use --force to skip confirmation</comment>');
+                    return Command::SUCCESS;
                 }
-                
-                // Log dry run audit
-                foreach ($validUsers as $userId) {
-                    $this->auditLogger->log(
-                        AuditLogger::ACTION_DISABLE_USERS,
-                        $userId,
-                        'occ',
-                        ['dry_run' => true],
-                        AuditLogger::STATUS_SUCCESS
-                    );
+                if ($dryRun) {
+                    $output->writeln(sprintf('<info>DRY RUN: Would disable user: %s</info>', $userId));
+                } else {
+                    $this->adapter->disableUser($userId);
+                    $output->writeln(sprintf('<info>User %s disabled successfully</info>', $userId));
                 }
-                
-                $output->writeln('<info>Dry run completed successfully.</info>');
-                return 0;
-            }
-
-            $successCount = 0;
-            $failCount = 0;
-
-            foreach ($validUsers as $userId) {
-                try {
-                    $result = $this->adapter->disableUser($userId);
-                    if ($result) {
-                        $successCount++;
-                        $output->writeln("<info>✓ User '$userId' disabled</info>");
-                        
-                        $this->auditLogger->log(
-                            AuditLogger::ACTION_DISABLE_USERS,
-                            $userId,
-                            'occ',
-                            [],
-                            AuditLogger::STATUS_SUCCESS
-                        );
-                    } else {
-                        $failCount++;
-                        $output->writeln("<error>✗ Failed to disable user '$userId'</error>");
-                        
-                        $this->auditLogger->log(
-                            AuditLogger::ACTION_DISABLE_USERS,
-                            $userId,
-                            'occ',
-                            ['error' => 'Failed to disable user'],
-                            AuditLogger::STATUS_FAILURE
-                        );
+            } elseif ($file) {
+                if (!file_exists($file)) {
+                    $output->writeln('<error>File not found: ' . $file . '</error>');
+                    return Command::FAILURE;
+                }
+                $users = file($file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+                $count = 0;
+                foreach ($users as $user) {
+                    $user = trim($user);
+                    if (!empty($user)) {
+                        if ($dryRun) {
+                            $output->writeln(sprintf('<info>DRY RUN: Would disable user: %s</info>', $user));
+                        } else {
+                            $this->adapter->disableUser($user);
+                            $output->writeln(sprintf('<info>Disabled user: %s</info>', $user));
+                        }
+                        $count++;
                     }
-                } catch (\Exception $e) {
-                    $failCount++;
-                    $output->writeln("<error>✗ Error disabling user '$userId': " . $e->getMessage() . "</error>");
-                    
-                    $this->auditLogger->log(
-                        AuditLogger::ACTION_DISABLE_USERS,
-                        $userId,
-                        'occ',
-                        ['error' => $e->getMessage()],
-                        AuditLogger::STATUS_FAILURE
-                    );
                 }
+                $output->writeln(sprintf('<info>Successfully processed %d users from file</info>', $count));
+            } else {
+                $output->writeln('<error>Please specify --user or --file option</error>');
+                return Command::INVALID;
             }
-
-            $output->writeln("\n<info>Summary:</info>");
-            $output->writeln("  Success: $successCount");
-            $output->writeln("  Failed: $failCount");
-
-            if ($failCount > 0) {
-                return 1;
-            }
-            
-            $output->writeln('<info>All users disabled successfully.</info>');
-            return 0;
-
+            return Command::SUCCESS;
         } catch (\Exception $e) {
-            $output->writeln('<error>Error: ' . $e->getMessage() . '</error>');
-            return 1;
+            $output->writeln('<error>Error disabling users: ' . $e->getMessage() . '</error>');
+            return Command::FAILURE;
         }
-    }
-
-    /**
-     * Get user list from input
-     */
-    private function getUserList(InputInterface $input, OutputInterface $output): array
-    {
-        $users = [];
-
-        // Get from --users option
-        $usersOption = $input->getOption('users');
-        if ($usersOption) {
-            $users = array_merge($users, explode(',', $usersOption));
-        }
-
-        // Get from --file option
-        $fileOption = $input->getOption('file');
-        if ($fileOption) {
-            if (!file_exists($fileOption)) {
-                $output->writeln("<error>File not found: $fileOption</error>");
-                return [];
-            }
-            
-            $content = file_get_contents($fileOption);
-            $lines = explode("\n", $content);
-            $users = array_merge($users, array_filter(array_map('trim', $lines)));
-        }
-
-        // Remove duplicates and empty values
-        $users = array_unique(array_filter($users));
-        
-        return $users;
     }
 }

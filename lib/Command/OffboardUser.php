@@ -28,15 +28,11 @@ namespace OCA\AdminOffboard\Command;
 use OCA\AdminOffboard\Adapter\NextcloudAdapter;
 use OCA\AdminOffboard\Audit\AuditLogger;
 use OCA\AdminOffboard\Queue\QueueManager;
-use OCP\AppFramework\Console\Command;
+use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Console\Question\ConfirmationQuestion;
 
-/**
- * OCC command to offboard a user
- */
 class OffboardUser extends Command
 {
     public function __construct(
@@ -59,16 +55,22 @@ class OffboardUser extends Command
                 'User ID to offboard'
             )
             ->addOption(
+                'disable',
+                'd',
+                InputOption::VALUE_NONE,
+                'Disable the user account'
+            )
+            ->addOption(
+                'delete-tokens',
+                't',
+                InputOption::VALUE_NONE,
+                'Delete all authentication tokens'
+            )
+            ->addOption(
                 'remote-wipe',
                 'w',
                 InputOption::VALUE_NONE,
-                'Perform remote wipe on all devices'
-            )
-            ->addOption(
-                'dry-run',
-                'd',
-                InputOption::VALUE_NONE,
-                'Simulate the operation without making changes'
+                'Trigger remote wipe for all devices'
             )
             ->addOption(
                 'queue',
@@ -78,7 +80,7 @@ class OffboardUser extends Command
             )
             ->addOption(
                 'force',
-                'f',
+                null,
                 InputOption::VALUE_NONE,
                 'Skip confirmation prompt'
             );
@@ -88,131 +90,74 @@ class OffboardUser extends Command
     {
         $userId = $input->getOption('user');
         if (!$userId) {
-            $output->writeln('<error>User ID is required. Use --user option.</error>');
-            return 1;
+            $output->writeln('<error>User ID is required (use --user option)</error>');
+            return Command::INVALID;
         }
 
-        // Check if user exists
-        if (!$this->adapter->userExists($userId)) {
-            $output->writeln("<error>User '$userId' does not exist.</error>");
-            return 1;
-        }
+        $disable = $input->getOption('disable');
+        $deleteTokens = $input->getOption('delete-tokens');
+        $remoteWipe = $input->getOption('remote-wipe');
+        $queue = $input->getOption('queue');
+        $force = $input->getOption('force');
 
-        $remoteWipe = (bool)$input->getOption('remote-wipe');
-        $dryRun = (bool)$input->getOption('dry-run');
-        $queue = (bool)$input->getOption('queue');
-        $force = (bool)$input->getOption('force');
-
-        // Show what will be done
-        $output->writeln('<info>Offboarding user: ' . $userId . '</info>');
-        $output->writeln('  - Disable user account');
-        $output->writeln('  - Delete all device tokens');
-        if ($remoteWipe) {
-            $output->writeln('  - Remote wipe all devices');
-        }
-        if ($dryRun) {
-            $output->writeln('<comment>DRY RUN MODE: No changes will be made</comment>');
-        }
-        if ($queue) {
-            $output->writeln('<comment>Operation will be queued for background processing</comment>');
-        }
-
-        // Confirm
-        if (!$force && !$dryRun) {
-            $helper = $this->getHelper('question');
-            $question = new ConfirmationQuestion(
-                '<question>Proceed with offboarding? (y/N) </question>',
-                false
-            );
-            if (!$helper->ask($input, $output, $question)) {
-                $output->writeln('<comment>Operation cancelled.</comment>');
-                return 0;
-            }
-        }
-
-        // Queue the operation if requested
-        if ($queue) {
-            $job = $this->queueManager->createOffboardJob(
-                $userId,
-                $remoteWipe,
-                'occ',
-                $remoteWipe ? 10 : 5 // Higher priority for remote wipe
-            );
-            
-            $output->writeln('<info>Job queued successfully. Job ID: ' . $job->getId() . '</info>');
-            return 0;
-        }
-
-        // Perform offboard
         try {
-            if ($dryRun) {
-                $output->writeln('<comment>DRY RUN: User would be disabled</comment>');
-                $output->writeln('<comment>DRY RUN: All tokens would be deleted</comment>');
-                if ($remoteWipe) {
-                    $output->writeln('<comment>DRY RUN: Remote wipe would be performed</comment>');
-                }
-                
-                // Log dry run audit
-                $this->auditLogger->log(
-                    AuditLogger::ACTION_OFFBOARD,
+            if ($queue) {
+                $jobId = $this->queueManager->addToQueue(
                     $userId,
-                    'occ',
-                    ['dry_run' => true, 'remote_wipe' => $remoteWipe],
-                    AuditLogger::STATUS_SUCCESS
+                    $disable,
+                    $deleteTokens,
+                    $remoteWipe
                 );
-                
-                $output->writeln('<info>Dry run completed successfully.</info>');
-                return 0;
+                $output->writeln(sprintf(
+                    '<info>User %s added to offboarding queue with job ID: %d</info>',
+                    $userId,
+                    $jobId
+                ));
+                return Command::SUCCESS;
             }
 
-            // 1. Disable user
-            $disabled = $this->adapter->disableUser($userId);
-            if ($disabled) {
-                $output->writeln('<info>✓ User disabled</info>');
-            } else {
-                $output->writeln('<error>✗ Failed to disable user</error>');
-                return 1;
+            if (!$force) {
+                $output->writeln(sprintf('<comment>WARNING: This will offboard user: %s</comment>', $userId));
+                $output->writeln('<comment>Use --force to skip confirmation</comment>');
+                return Command::SUCCESS;
             }
 
-            // 2. Delete all tokens
-            $tokensDeleted = $this->adapter->deleteAllTokens($userId);
-            $output->writeln("<info>✓ All tokens deleted</info>");
+            if ($disable) {
+                $this->adapter->disableUser($userId);
+                $output->writeln(sprintf('<info>User %s disabled</info>', $userId));
+                $this->auditLogger->log($userId, 'user_disabled');
+            }
 
-            // 3. Remote wipe if requested
+            if ($deleteTokens) {
+                $count = $this->adapter->deleteAllUserTokens($userId);
+                $output->writeln(sprintf(
+                    '<info>Deleted %d tokens for user %s</info>',
+                    $count,
+                    $userId
+                ));
+                $this->auditLogger->log($userId, 'tokens_deleted', ['count' => $count]);
+            }
+
             if ($remoteWipe) {
-                $wipeResult = $this->adapter->remoteWipeUser($userId);
-                if ($wipeResult) {
-                    $output->writeln('<info>✓ Remote wipe initiated</info>');
-                } else {
-                    $output->writeln('<comment>⚠ Remote wipe not supported or failed</comment>');
-                }
+                $count = $this->adapter->remoteWipeUserDevices($userId);
+                $output->writeln(sprintf(
+                    '<info>Remote wipe triggered for %d devices of user %s</info>',
+                    $count,
+                    $userId
+                ));
+                $this->auditLogger->log($userId, 'remote_wipe_triggered', ['device_count' => $count]);
             }
 
-            // Log audit
-            $this->auditLogger->log(
-                AuditLogger::ACTION_OFFBOARD,
-                $userId,
-                'occ',
-                ['remote_wipe' => $remoteWipe, 'tokens_deleted' => $tokensDeleted],
-                AuditLogger::STATUS_SUCCESS
-            );
+            if (!$disable && !$deleteTokens && !$remoteWipe) {
+                $output->writeln('<error>No action specified. Use --disable, --delete-tokens, or --remote-wipe</error>');
+                return Command::INVALID;
+            }
 
-            $output->writeln('<info>✓ User offboarded successfully</info>');
-            return 0;
-
+            return Command::SUCCESS;
         } catch (\Exception $e) {
-            $output->writeln('<error>Error: ' . $e->getMessage() . '</error>');
-            
-            // Log failure
-            $this->auditLogger->log(
-                AuditLogger::ACTION_OFFBOARD,
-                $userId,
-                'occ',
-                ['error' => $e->getMessage()],
-                AuditLogger::STATUS_FAILURE
-            );
-            
-            return 1;
+            $output->writeln('<error>Error offboarding user: ' . $e->getMessage() . '</error>');
+            $this->auditLogger->log($userId, 'offboard_error', ['error' => $e->getMessage()]);
+            return Command::FAILURE;
         }
     }
 }
