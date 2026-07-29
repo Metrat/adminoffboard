@@ -7,22 +7,6 @@
     <description>
         <![CDATA[
         Admin Offboard provides enterprise-grade user offboarding capabilities for Nextcloud administrators.
-        
-        ## Features
-        - **Mass Device Token Management**: Delete all device tokens for users in bulk
-        - **Remote Wipe**: Support for compatible clients to perform remote device wipes
-        - **Mass User Disable**: Batch disable user accounts
-        - **Queue System**: Async operations for large-scale actions
-        - **Dry Run Mode**: Test operations before execution
-        - **Audit Trail**: Comprehensive action logging
-        - **Workflow Engine**: Customizable operation workflows
-        - **Driver Layer**: Extensible device type support
-        
-        ## Security
-        - All operations require admin privileges
-        - Idempotent operations for safety
-        - Full audit logging
-        - Only uses public OCP API
         ]]>
     </description>
     <version>0.1.0</version>
@@ -39,11 +23,8 @@
     <bugs>https://github.com/Metrat/adminoffboard/issues</bugs>
     <repository>https://github.com/Metrat/adminoffboard.git</repository>
     
-    <screenshot>https://raw.githubusercontent.com/Metrat/adminoffboard/main/screenshots/dashboard.png</screenshot>
-    <screenshot>https://raw.githubusercontent.com/Metrat/adminoffboard/main/screenshots/bulk-operations.png</screenshot>
-    
     <dependencies>
-        <php min-version="8.2" max-version="8.4"/>
+        <php min-version="8.2"/>
         <nextcloud min-version="26" max-version="34"/>
     </dependencies>
     

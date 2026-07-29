@@ -23,16 +23,50 @@ declare(strict_types=1);
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+use OCP\IConfig;
 use OCP\Util;
+use OCP\Migration\IOutput;
 
-// Register scripts and styles for the app
-Util::addScript('adminoffboard', 'adminoffboard-main');
-Util::addStyle('adminoffboard', 'adminoffboard-main');
+// Register scripts and styles
+Util::addScript('adminoffboard', 'adminoffboard');
+Util::addStyle('adminoffboard', 'adminoffboard');
 
-// Register initial settings
-\OC::$server->getConfig()->setAppValue('adminoffboard', 'installed_version', '0.1.0');
-\OC::$server->getConfig()->setAppValue('adminoffboard', 'installed_time', (string)time());
+/**
+ * Installation handler
+ */
+class AdminOffboardInstall {
+    private IConfig $config;
 
-// Create initial database tables
-$schema = \OC::$server->getDatabaseConnection()->getSchema();
-// Tables will be created via migration
+    public function __construct() {
+        $this->config = \OC::$server->get(IConfig::class);
+    }
+
+    public function run(): void {
+        // Set initial configuration
+        $this->config->setAppValue('adminoffboard', 'installed_version', '0.1.0');
+        $this->config->setAppValue('adminoffboard', 'installed_time', (string)time());
+        
+        // Set default settings
+        $defaults = [
+            'queue_batch_size' => '100',
+            'queue_max_attempts' => '3',
+            'audit_log_retention_days' => '90',
+            'dry_run_default' => 'false',
+            'auto_cleanup_audit_logs' => 'true',
+            'remote_wipe_timeout' => '30',
+            'max_users_per_operation' => '1000',
+            'allow_api_access' => 'true',
+            'log_level' => 'info',
+        ];
+
+        foreach ($defaults as $key => $value) {
+            if ($this->config->getAppValue('adminoffboard', $key, '') === '') {
+                $this->config->setAppValue('adminoffboard', $key, $value);
+            }
+        }
+    }
+}
+
+// Execute installation
+$install = new AdminOffboardInstall();
+$install->run();
