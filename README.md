@@ -3,51 +3,58 @@
 [![Nextcloud](https://img.shields.io/badge/Nextcloud-34-blue.svg)](https://nextcloud.com/)
 [![PHP](https://img.shields.io/badge/PHP-8.2+-purple.svg)](https://php.net/)
 [![License](https://img.shields.io/badge/License-AGPLv3-blue.svg)](LICENSE)
+[![CI](https://github.com/Metrat/adminoffboard/actions/workflows/ci.yml/badge.svg)](https://github.com/Metrat/adminoffboard/actions/workflows/ci.yml)
+[![Code Coverage](https://codecov.io/gh/Metrat/adminoffboard/branch/main/graph/badge.svg)](https://codecov.io/gh/Metrat/adminoffboard)
+[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/Metrat/adminoffboard/badges/quality-score.png?b=main)](https://scrutinizer-ci.com/g/Metrat/adminoffboard/?branch=main)
 
 ## 🚀 Enterprise Administration Tool for Nextcloud
 
 Admin Offboard is a powerful administration extension for Nextcloud that provides enterprise-grade user offboarding and device management capabilities.
 
-## ✨ Features
+## 📦 Installation
 
-### 🔐 Security & Compliance
-- **Audit Trail**: Complete logging of all administrative actions
-- **Idempotent Operations**: Safe to retry operations
-- **Dry Run Mode**: Test before executing
-- **Admin-Only**: Strict permission controls
+### From Nextcloud App Store
+1. Open Nextcloud Apps
+2. Search for "Admin Offboard"
+3. Click Install
 
-### 📱 Device Management
-- **Mass Token Deletion**: Remove all device tokens for users in bulk
-- **Remote Wipe**: Support for compatible clients (Desktop, Mobile)
-- **Device Discovery**: List and manage user devices
+### From GitHub
+```bash
+cd /path/to/nextcloud/apps
+git clone https://github.com/Metrat/adminoffboard.git
+cd adminoffboard
+composer install --no-dev
+php occ app:enable adminoffboard
 
-### 👥 User Management
-- **Mass Disable**: Disable multiple user accounts at once
-- **Batch Operations**: Process users in bulk via queue
-- **Workflow Engine**: Customizable operation workflows
+Quick Start
+# Offboard a user
+php occ adminoffboard:offboard --user=username
 
-### 🎯 User Interface
-- **Admin Dashboard**: Central management interface
-- **Bulk Operations**: Batch actions with progress tracking
-- **Job Monitoring**: Queue status and job details
+# Disable multiple users
+php occ adminoffboard:disable-users --users=user1,user2,user3
 
-### 🔌 Integration
-- **REST API**: Complete API for automation
-- **OCC Commands**: Command-line interface
-- **Nextcloud Hooks**: Integration with Nextcloud events
+# Process queue
+php occ adminoffboard:process-queue
 
-## 📋 Requirements
+# View audit logs
+php occ adminoffboard:audit
 
-- Nextcloud Hub 26 (34.0.2) or higher
-- PHP 8.2 or higher
-- MySQL/MariaDB/PostgreSQL
+🔒 Security
+All operations require admin privileges
 
-## 🚀 Quick Start
+Full audit logging
 
-### Installation
+Idempotent operations
 
-1. Download the app from the Nextcloud App Store or GitHub
-2. Extract to your Nextcloud apps directory
-3. Enable the app via Nextcloud administration panel:
-   ```bash
-   sudo -u www-data php occ app:enable adminoffboard
+Dry-run support
+
+Only uses public OCP API
+
+🤝 Contributing
+Please read CONTRIBUTING.md for details on our code of conduct and the process for submitting pull requests.
+
+📄 License
+This project is licensed under the AGPL-3.0 License - see the LICENSE file for details.
+
+🙏 Credits
+Developed by Metrat
