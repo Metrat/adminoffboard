@@ -70,7 +70,7 @@ class DeviceRepository
      */
     public function findByUser(string $userId): array
     {
-        return $this->mapper->findByUser($userId);
+        return $this->mapper->findByUserId($userId);
     }
 
     /**

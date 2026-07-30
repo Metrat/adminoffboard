@@ -47,6 +47,12 @@ class JobProcessor
     /**
      * Process a single job
      */
+
+    public function processPendingJobs(int $limit = 10): int
+    {
+        // Placeholder - needs queue implementation
+        return 0;
+    }
     public function processJob(Job $job): bool
     {
         $this->logger->info('Processing job', [
