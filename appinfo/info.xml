@@ -26,7 +26,6 @@
         <command>OCA\AdminOffboard\Command\DisableUsers</command>
         <command>OCA\AdminOffboard\Command\DeleteTokens</command>
         <command>OCA\AdminOffboard\Command\RemoteWipe</command>
-        <command>OCA\AdminOffboard\Command\CleanupAuditLogs</command>
         <command>OCA\AdminOffboard\Command\ProcessQueue</command>
     </commands>
 </info>
