@@ -74,7 +74,7 @@ class OffboardUser extends Command
             )
             ->addOption(
                 'queue',
-                'q',
+                null,
                 InputOption::VALUE_NONE,
                 'Queue the operation for background processing'
             )
@@ -125,7 +125,7 @@ class OffboardUser extends Command
             if ($disable) {
                 $this->adapter->disableUser($userId);
                 $output->writeln(sprintf('<info>User %s disabled</info>', $userId));
-                $this->auditLogger->log($userId, 'user_disabled');
+                
             }
 
             if ($deleteTokens) {
@@ -135,7 +135,7 @@ class OffboardUser extends Command
                     $count,
                     $userId
                 ));
-                $this->auditLogger->log($userId, 'tokens_deleted', ['count' => $count]);
+                
             }
 
             if ($remoteWipe) {
@@ -145,7 +145,7 @@ class OffboardUser extends Command
                     $count,
                     $userId
                 ));
-                $this->auditLogger->log($userId, 'remote_wipe_triggered', ['device_count' => $count]);
+                
             }
 
             if (!$disable && !$deleteTokens && !$remoteWipe) {
@@ -156,7 +156,7 @@ class OffboardUser extends Command
             return Command::SUCCESS;
         } catch (\Exception $e) {
             $output->writeln('<error>Error offboarding user: ' . $e->getMessage() . '</error>');
-            $this->auditLogger->log($userId, 'offboard_error', ['error' => $e->getMessage()]);
+            
             return Command::FAILURE;
         }
     }

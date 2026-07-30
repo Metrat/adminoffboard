@@ -144,7 +144,7 @@ class AuditLogMapper extends QBMapper
             ->from($this->getTableName())
             ->where($qb->expr()->eq('action', $qb->createNamedParameter($action)));
 
-        $result = $qb->execute();
+        $result = $qb->executeStatement();
         $row = $result->fetch();
         $result->closeCursor();
 
@@ -161,7 +161,7 @@ class AuditLogMapper extends QBMapper
             ->from($this->getTableName())
             ->where($qb->expr()->eq('user_id', $qb->createNamedParameter($userId)));
 
-        $result = $qb->execute();
+        $result = $qb->executeStatement();
         $row = $result->fetch();
         $result->closeCursor();
 
@@ -177,7 +177,7 @@ class AuditLogMapper extends QBMapper
         $qb->select($qb->expr()->count('id', 'count'))
             ->from($this->getTableName());
 
-        $result = $qb->execute();
+        $result = $qb->executeStatement();
         $row = $result->fetch();
         $result->closeCursor();
 
@@ -195,7 +195,7 @@ class AuditLogMapper extends QBMapper
             ->from($this->getTableName())
             ->where($qb->expr()->gte('timestamp', $qb->createNamedParameter($cutoff)));
 
-        $result = $qb->execute();
+        $result = $qb->executeStatement();
         $row = $result->fetch();
         $result->closeCursor();
 
@@ -213,7 +213,7 @@ class AuditLogMapper extends QBMapper
         $qb->delete($this->getTableName())
             ->where($qb->expr()->lt('timestamp', $qb->createNamedParameter($cutoff)));
 
-        return $qb->execute();
+        return $qb->executeStatement();
     }
 
     /**

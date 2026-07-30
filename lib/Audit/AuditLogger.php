@@ -57,7 +57,7 @@ class AuditLogger
     public function log(
         string $action,
         string $userId,
-        string $actor,
+        string $actor = "",
         ?array $details = null,
         string $status = self::STATUS_SUCCESS,
         ?string $target = null,
@@ -93,7 +93,7 @@ class AuditLogger
     public function logSuccess(
         string $action,
         string $userId,
-        string $actor,
+        string $actor = "",
         ?array $details = null,
         ?string $target = null
     ): AuditLog {
@@ -106,7 +106,7 @@ class AuditLogger
     public function logFailure(
         string $action,
         string $userId,
-        string $actor,
+        string $actor = "",
         ?array $details = null,
         ?string $target = null
     ): AuditLog {
@@ -119,7 +119,7 @@ class AuditLogger
     public function logPartial(
         string $action,
         string $userId,
-        string $actor,
+        string $actor = "",
         ?array $details = null,
         ?string $target = null
     ): AuditLog {

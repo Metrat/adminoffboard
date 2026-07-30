@@ -64,7 +64,7 @@ class DisableUsers extends Command
             )
             ->addOption(
                 'queue',
-                'q',
+                null,
                 InputOption::VALUE_NONE,
                 'Queue the operation for background processing'
             )

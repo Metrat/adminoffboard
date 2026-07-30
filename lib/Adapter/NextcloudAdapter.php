@@ -89,6 +89,30 @@ class NextcloudAdapter
         return $this->tokenAdapter->deleteAllTokens($userId);
     }
 
+
+    /**
+     * Alias for deleteAllTokens
+     */
+    public function deleteAllUserTokens(string $userId): bool
+    {
+        return $this->deleteAllTokens($userId);
+    }
+
+    /**
+     * Delete all tokens except current session
+     */
+    public function deleteUserTokensExceptCurrent(string $userId): bool
+    {
+        return $this->tokenAdapter->deleteAllTokensExceptCurrent($userId);
+    }
+
+    /**
+     * Remote wipe all devices for user
+     */
+    public function remoteWipeUserDevices(string $userId): int
+    {
+        return $this->deviceAdapter->remoteWipeUserDevices($userId);
+    }
     /**
      * Delete specific token
      */

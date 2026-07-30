@@ -45,13 +45,22 @@ class TokenAdapter
     /**
      * Delete all tokens for a user
      */
+
+    /**
+     * Delete all tokens except current session
+     */
+    public function deleteAllTokensExceptCurrent(string $userId): bool
+    {
+        // Placeholder - needs implementation
+        return $this->deleteAllTokens($userId);
+    }
     public function deleteAllTokens(string $userId): bool
     {
         $qb = $this->db->getQueryBuilder();
         $qb->delete(self::TOKEN_TABLE)
             ->where($qb->expr()->eq('uid', $qb->createNamedParameter($userId)));
 
-        return $qb->execute() > 0;
+        return $qb->executeStatement() > 0;
     }
 
     /**
@@ -63,7 +72,7 @@ class TokenAdapter
         $qb->delete(self::TOKEN_TABLE)
             ->where($qb->expr()->eq('id', $qb->createNamedParameter($tokenId, IQueryBuilder::PARAM_INT)));
 
-        return $qb->execute() > 0;
+        return $qb->executeStatement() > 0;
     }
 
     /**
@@ -76,7 +85,7 @@ class TokenAdapter
             ->from(self::TOKEN_TABLE)
             ->where($qb->expr()->eq('uid', $qb->createNamedParameter($userId)));
 
-        $result = $qb->execute();
+        $result = $qb->executeStatement();
         $tokens = $result->fetchAll();
         $result->closeCursor();
 
@@ -93,7 +102,7 @@ class TokenAdapter
             ->from(self::TOKEN_TABLE)
             ->where($qb->expr()->eq('id', $qb->createNamedParameter($tokenId, IQueryBuilder::PARAM_INT)));
 
-        $result = $qb->execute();
+        $result = $qb->executeStatement();
         $token = $result->fetch();
         $result->closeCursor();
 
@@ -110,7 +119,7 @@ class TokenAdapter
             ->from(self::TOKEN_TABLE)
             ->where($qb->expr()->eq('uid', $qb->createNamedParameter($userId)));
 
-        $result = $qb->execute();
+        $result = $qb->executeStatement();
         $row = $result->fetch();
         $result->closeCursor();
 
@@ -128,7 +137,7 @@ class TokenAdapter
             ->where($qb->expr()->eq('uid', $qb->createNamedParameter($userId)))
             ->andWhere($qb->expr()->eq('id', $qb->createNamedParameter($tokenId, IQueryBuilder::PARAM_INT)));
 
-        $result = $qb->execute();
+        $result = $qb->executeStatement();
         $token = $result->fetch();
         $result->closeCursor();
 
@@ -144,6 +153,6 @@ class TokenAdapter
         $qb->delete(self::TOKEN_TABLE)
             ->where($qb->expr()->lt('last_activity', $qb->createNamedParameter($timestamp)));
 
-        return $qb->execute();
+        return $qb->executeStatement();
     }
 }

@@ -55,6 +55,15 @@ class DeviceAdapter
     /**
      * Get user devices
      */
+
+    /**
+     * Remote wipe all devices for a user
+     */
+    public function remoteWipeUserDevices(string $userId): int
+    {
+        // Placeholder - needs implementation
+        return $this->remoteWipeUser($userId);
+    }
     public function getUserDevices(string $userId): array
     {
         // Get cached devices from repository

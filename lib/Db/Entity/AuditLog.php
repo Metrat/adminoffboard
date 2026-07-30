@@ -63,7 +63,7 @@ class AuditLog extends Entity
     public const ACTION_CONFIG_CHANGE = 'config_change';
 
     /** @var int */
-    protected $id;
+    public $id;
 
     /** @var string */
     protected $action;

@@ -157,7 +157,7 @@ class JobMapper extends QBMapper
             ->from($this->getTableName())
             ->where($qb->expr()->eq('status', $qb->createNamedParameter($status)));
 
-        $result = $qb->execute();
+        $result = $qb->executeStatement();
         $row = $result->fetch();
         $result->closeCursor();
 
@@ -176,7 +176,7 @@ class JobMapper extends QBMapper
             ->where($qb->expr()->eq('status', $qb->createNamedParameter(Job::STATUS_COMPLETED)))
             ->andWhere($qb->expr()->lt('completed_at', $qb->createNamedParameter($cutoff)));
 
-        return $qb->execute();
+        return $qb->executeStatement();
     }
 
     /**
