@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <!-- Background -->
+  <rect width="200" height="200" rx="40" fill="#6C63FF" />
+  
+  <!-- Shield icon -->
+  <path d="M100 20 L140 35 L140 85 C140 120 120 150 100 165 C80 150 60 120 60 85 L60 35 L100 20Z" 
+        fill="none" stroke="white" stroke-width="8" stroke-linejoin="round" />
+  
+  <!-- Checkmark -->
+  <path d="M75 95 L95 115 L135 75" 
+        fill="none" stroke="white" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" />
+  
+  <!-- Lock icon -->
+  <rect x="80" y="100" width="40" height="30" rx="5" fill="white" opacity="0.9" />
+  <path d="M90 100 L90 90 C90 80 95 75 100 75 C105 75 110 80 110 90 L110 100" 
+        fill="none" stroke="white" stroke-width="6" stroke-linecap="round" />
+  
+  <!-- Text -->
+  <text x="100" y="195" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="white" opacity="0.9">
+    ADMIN OFFBOARD
+  </text>
+</svg>

@@ -66,31 +66,31 @@ class AuditLog extends Entity
     public $id;
 
     /** @var string */
-    protected $action;
+    public $action;
 
     /** @var string */
-    protected $userId;
+    public $userId;
 
     /** @var string */
-    protected $actor;
+    public $actor;
 
     /** @var string|null */
-    protected $target;
+    public $target;
 
     /** @var array|null */
-    protected $details;
+    public $details;
 
     /** @var string */
-    protected $status;
+    public $status;
 
     /** @var string|null */
-    protected $ipAddress;
+    public $ipAddress;
 
     /** @var string|null */
-    protected $userAgent;
+    public $userAgent;
 
     /** @var int */
-    protected $timestamp;
+    public $timestamp;
 
     public function __construct()
     {

@@ -9,6 +9,7 @@ use OCA\AdminOffboard\Adapter\NextcloudAdapter;
 use OCA\AdminOffboard\Adapter\TokenAdapter;
 use OCA\AdminOffboard\Adapter\UserAdapter;
 use OCA\AdminOffboard\Audit\AuditLogger;
+use OCA\AdminOffboard\BackgroundJob\ProcessQueueJob;
 use OCA\AdminOffboard\Configuration\AppConfig;
 use OCA\AdminOffboard\Db\Mapper\AuditLogMapper;
 use OCA\AdminOffboard\Db\Mapper\DeviceMapper;
@@ -32,7 +33,6 @@ use OCP\IUserManager;
 use OCP\IUserSession;
 use OCP\Security\ISecureRandom;
 use OCP\Notification\IManager as INotificationManager;
-use Psr\Log\LoggerInterface;
 
 class Application extends App implements IBootstrap
 {
@@ -45,134 +45,67 @@ class Application extends App implements IBootstrap
 
     public function register(IRegistrationContext $context): void
     {
-        // Register Notifier
         $context->registerNotifierService(Notifier::class);
 
-        // Configuration
         $context->registerService(AppConfig::class, function($c) {
-            return new AppConfig(
-                $c->get(IConfig::class),
-                self::APP_ID
-            );
+            return new AppConfig($c->get(IConfig::class), self::APP_ID);
         });
 
-        // Database mappers
         $context->registerService(JobMapper::class, function($c) {
-            return new JobMapper(
-                $c->get(IDBConnection::class)
-            );
+            return new JobMapper($c->get(IDBConnection::class));
         });
-
         $context->registerService(AuditLogMapper::class, function($c) {
-            return new AuditLogMapper(
-                $c->get(IDBConnection::class)
-            );
+            return new AuditLogMapper($c->get(IDBConnection::class));
         });
-
         $context->registerService(DeviceMapper::class, function($c) {
-            return new DeviceMapper(
-                $c->get(IDBConnection::class)
-            );
+            return new DeviceMapper($c->get(IDBConnection::class));
         });
-
-        // Repositories
         $context->registerService(JobRepository::class, function($c) {
-            return new JobRepository(
-                $c->get(JobMapper::class)
-            );
+            return new JobRepository($c->get(JobMapper::class));
         });
-
         $context->registerService(AuditLogRepository::class, function($c) {
-            return new AuditLogRepository(
-                $c->get(AuditLogMapper::class)
-            );
+            return new AuditLogRepository($c->get(AuditLogMapper::class));
         });
-
         $context->registerService(DeviceRepository::class, function($c) {
-            return new DeviceRepository(
-                $c->get(DeviceMapper::class)
-            );
+            return new DeviceRepository($c->get(DeviceMapper::class));
         });
-
-        // Adapters
         $context->registerService(UserAdapter::class, function($c) {
-            return new UserAdapter(
-                $c->get(IUserManager::class),
-                $c->get(IUserSession::class)
-            );
+            return new UserAdapter($c->get(IUserManager::class), $c->get(IUserSession::class));
         });
-
         $context->registerService(TokenAdapter::class, function($c) {
-            return new TokenAdapter(
-                $c->get(ISecureRandom::class),
-                $c->get(IDBConnection::class)
-            );
+            return new TokenAdapter($c->get(ISecureRandom::class), $c->get(IDBConnection::class));
         });
-
         $context->registerService(DeviceAdapter::class, function($c) {
-            return new DeviceAdapter(
-                $c->get(DeviceRepository::class),
-                $c->get(TokenAdapter::class),
-                $c->get(INotificationManager::class),
-                $c->get(IUserManager::class),
-                $c->get(LoggerFactory::class)->getLogger()
-            );
+            return new DeviceAdapter($c->get(DeviceRepository::class), $c->get(TokenAdapter::class), $c->get(INotificationManager::class), $c->get(IUserManager::class), $c->get(LoggerFactory::class)->getLogger());
         });
-
         $context->registerService(NextcloudAdapter::class, function($c) {
-            return new NextcloudAdapter(
-                $c->get(UserAdapter::class),
-                $c->get(TokenAdapter::class),
-                $c->get(DeviceAdapter::class)
-            );
+            return new NextcloudAdapter($c->get(UserAdapter::class), $c->get(TokenAdapter::class), $c->get(DeviceAdapter::class));
         });
-
-        // Logger
         $context->registerService(LoggerFactory::class, function($c) {
             return new LoggerFactory(self::APP_ID);
         });
-
-        // Audit
         $context->registerService(AuditLogger::class, function($c) {
-            return new AuditLogger(
-                $c->get(AuditLogRepository::class),
-                $c->get(LoggerFactory::class)->getLogger()
-            );
+            return new AuditLogger($c->get(AuditLogRepository::class), $c->get(LoggerFactory::class)->getLogger());
         });
-
-        // Driver
         $context->registerService(DriverFactory::class, function($c) {
-            return new DriverFactory(
-                $c->get(TokenAdapter::class),
-                $c->get(LoggerFactory::class)->getLogger(),
-                $c->get(INotificationManager::class),
-                $c->get(IUserManager::class)
-            );
+            return new DriverFactory($c->get(TokenAdapter::class), $c->get(LoggerFactory::class)->getLogger(), $c->get(INotificationManager::class), $c->get(IUserManager::class));
         });
-
-        // Queue
         $context->registerService(JobQueue::class, function($c) {
-            return new JobQueue(
-                $c->get(JobRepository::class),
-                $c->get(LoggerFactory::class)->getLogger()
-            );
+            return new JobQueue($c->get(JobRepository::class), $c->get(LoggerFactory::class)->getLogger());
         });
-
         $context->registerService(QueueManager::class, function($c) {
-            return new QueueManager(
-                $c->get(JobQueue::class),
-                $c->get(JobProcessor::class),
-                $c->get(AppConfig::class),
-                $c->get(LoggerFactory::class)->getLogger()
-            );
+            return new QueueManager($c->get(JobQueue::class), $c->get(JobProcessor::class), $c->get(AppConfig::class), $c->get(LoggerFactory::class)->getLogger());
+        });
+        $context->registerService(JobProcessor::class, function($c) {
+            return new JobProcessor($c->get(JobRepository::class), $c->get(AuditLogger::class), $c->get(LoggerFactory::class)->getLogger(), $c->get(NextcloudAdapter::class));
         });
 
-        $context->registerService(JobProcessor::class, function($c) {
-            return new JobProcessor(
-                $c->get(JobRepository::class),
-                $c->get(AuditLogger::class),
-                $c->get(LoggerFactory::class)->getLogger(),
-                $c->get(NextcloudAdapter::class)
+        // Register background job for queue processing
+        $context->registerService(ProcessQueueJob::class, function($c) {
+            return new ProcessQueueJob(
+                $c->get(\OCP\AppFramework\Utility\ITimeFactory::class),
+                $c->get(QueueManager::class),
+                $c->get(LoggerFactory::class)->getLogger()
             );
         });
     }
@@ -180,5 +113,15 @@ class Application extends App implements IBootstrap
     public function boot(IBootContext $context): void
     {
         $context->getAppContainer()->query(AppConfig::class)->init();
+        
+        // Register background job for queue processing
+        try {
+            $jobList = $context->getServerContainer()->get(\OCP\BackgroundJob\IJobList::class);
+            if (!$jobList->has(ProcessQueueJob::class, null)) {
+                $jobList->add(ProcessQueueJob::class);
+            }
+        } catch (\Exception $e) {
+            // Silently ignore - background job will be added on next run
+        }
     }
 }
