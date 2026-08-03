@@ -85,7 +85,7 @@ class TokenAdapter
             ->from(self::TOKEN_TABLE)
             ->where($qb->expr()->eq('uid', $qb->createNamedParameter($userId)));
 
-        $result = $qb->executeStatement();
+        $result = $qb->executeQuery();
         $tokens = $result->fetchAll();
         $result->closeCursor();
 
@@ -102,7 +102,7 @@ class TokenAdapter
             ->from(self::TOKEN_TABLE)
             ->where($qb->expr()->eq('id', $qb->createNamedParameter($tokenId, IQueryBuilder::PARAM_INT)));
 
-        $result = $qb->executeStatement();
+        $result = $qb->executeQuery();
         $token = $result->fetch();
         $result->closeCursor();
 
@@ -119,7 +119,7 @@ class TokenAdapter
             ->from(self::TOKEN_TABLE)
             ->where($qb->expr()->eq('uid', $qb->createNamedParameter($userId)));
 
-        $result = $qb->executeStatement();
+        $result = $qb->executeQuery();
         $row = $result->fetch();
         $result->closeCursor();
 
@@ -137,7 +137,7 @@ class TokenAdapter
             ->where($qb->expr()->eq('uid', $qb->createNamedParameter($userId)))
             ->andWhere($qb->expr()->eq('id', $qb->createNamedParameter($tokenId, IQueryBuilder::PARAM_INT)));
 
-        $result = $qb->executeStatement();
+        $result = $qb->executeQuery();
         $token = $result->fetch();
         $result->closeCursor();
 

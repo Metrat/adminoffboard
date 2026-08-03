@@ -130,6 +130,19 @@ class DeviceMapper extends QBMapper
     }
 
     /**
+     * Find device by user ID and device ID
+     */
+    public function findByUserAndDeviceId(string $userId, string $deviceId): ?Device
+    {
+        $qb = $this->db->getQueryBuilder();
+        $qb->select("*")
+            ->from(self::TABLE_NAME)
+            ->where($qb->expr()->eq("user_id", $qb->createNamedParameter($userId)))
+            ->andWhere($qb->expr()->eq("id", $qb->createNamedParameter($deviceId, IQueryBuilder::PARAM_INT)));
+        return $this->findEntity($qb);
+    }
+
+    /**
      * Delete device by ID
      */
     public function deleteById(int $id): void

@@ -97,7 +97,7 @@ class RemoteWipe extends Command
 
             return Command::SUCCESS;
         } catch (\Exception $e) {
-            $output->writeln('<error>Error triggering remote wipe: ' . $e->getMessage() . '</error>');
+            $output->writeln("<error>Error: " . $e->getMessage() . "</error>"); $output->writeln("<error>" . $e->getTraceAsString() . "</error>");
             return Command::FAILURE;
         }
     }

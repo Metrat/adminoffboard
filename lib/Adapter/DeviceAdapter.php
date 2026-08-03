@@ -62,7 +62,7 @@ class DeviceAdapter
     public function remoteWipeUserDevices(string $userId): int
     {
         // Placeholder - needs implementation
-        return $this->remoteWipeUser($userId);
+        return (int) $this->remoteWipeUser($userId);
     }
     public function getUserDevices(string $userId): array
     {
