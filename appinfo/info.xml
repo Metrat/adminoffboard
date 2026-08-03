@@ -6,7 +6,7 @@
     <description>
         Admin Offboard provides enterprise-grade user offboarding capabilities for Nextcloud administrators.
     </description>
-    <version>0.1.7</version>
+    <version>0.1.9</version>
     <licence>agpl</licence>
     <author mail="disparam@gmail.com" homepage="https://github.com/Metrat">Metrat</author>
     <namespace>AdminOffboard</namespace>
@@ -23,6 +23,8 @@
     <repair-steps>
         <post-migration>
             <step>OCA\AdminOffboard\Migration\InstallSchema</step>
+            <step>OCA\AdminOffboard\Migration\Version0001Date20260803</step>
+            <step>OCA\AdminOffboard\Migration\Version0002Date20260803</step>
         </post-migration>
     </repair-steps>
     <commands>

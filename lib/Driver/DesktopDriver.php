@@ -2,32 +2,11 @@
 
 declare(strict_types=1);
 
-/**
- * @copyright Copyright (c) 2024 Metrat <disparam@gmail.com>
- *
- * @author Metrat <disparam@gmail.com>
- *
- * @license AGPL-3.0-or-later
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
- */
-
 namespace OCA\AdminOffboard\Driver;
 
-/**
- * Desktop device driver
- */
+use OCP\Notification\IManager as INotificationManager;
+use OCP\IUserManager;
+
 class DesktopDriver extends BaseDriver
 {
     private const SUPPORTED_PLATFORMS = [
@@ -44,6 +23,15 @@ class DesktopDriver extends BaseDriver
         'linux-desktop'
     ];
 
+    public function __construct(
+        $tokenAdapter,
+        $logger,
+        private INotificationManager $notificationManager,
+        private IUserManager $userManager
+    ) {
+        parent::__construct($tokenAdapter, $logger);
+    }
+
     public function getName(): string
     {
         return 'Desktop';
@@ -57,15 +45,13 @@ class DesktopDriver extends BaseDriver
     public function supports(array $deviceData): bool
     {
         $name = strtolower($deviceData['name'] ?? '');
-        
-        // Check if it's a desktop device
+
         foreach (self::SUPPORTED_PLATFORMS as $platform) {
             if (strpos($name, $platform) !== false) {
                 return true;
             }
         }
 
-        // Check device type if available
         $deviceType = strtolower($deviceData['device_type'] ?? '');
         return in_array($deviceType, ['desktop', 'pc', 'workstation', 'laptop']);
     }
@@ -83,7 +69,6 @@ class DesktopDriver extends BaseDriver
         ]);
 
         try {
-            // Check if this client supports remote wipe
             $name = strtolower($deviceData['name'] ?? '');
             $supported = false;
 
@@ -101,15 +86,16 @@ class DesktopDriver extends BaseDriver
                 return false;
             }
 
-            // Perform remote wipe by deleting the token
-            // For desktop clients, we also need to send a wipe command
-            // This is handled by the Nextcloud server
+            // Удаляем токен
             $deleted = $this->tokenAdapter->deleteToken($tokenId);
 
             if ($deleted) {
                 $this->logOperation('remote_wipe_success', [
                     'token_id' => $tokenId
                 ]);
+
+                // Для десктопа тоже отправляем уведомление
+                $this->sendDesktopWipeNotification($deviceData);
             }
 
             return $deleted;
@@ -118,6 +104,49 @@ class DesktopDriver extends BaseDriver
                 'token_id' => $tokenId
             ]);
             return false;
+        }
+    }
+
+    /**
+     * Отправка уведомления на десктоп
+     */
+    private function sendDesktopWipeNotification(array $deviceData): void
+    {
+        try {
+            $userId = $deviceData['user_id'] ?? null;
+            if (!$userId) {
+                return;
+            }
+
+            $user = $this->userManager->get($userId);
+            if (!$user) {
+                return;
+            }
+
+            $notification = $this->notificationManager->createNotification();
+            $notification->setApp('adminoffboard')
+                ->setUser($userId)
+                ->setDateTime(new \DateTime())
+                ->setObject('device', (string)($deviceData['id'] ?? 'unknown'))
+                ->setSubject('remote_wipe_desktop', [
+                    'deviceName' => $deviceData['name'] ?? 'Unknown device',
+                    'timestamp' => time()
+                ])
+                ->setMessage('remote_wipe_desktop_message', [
+                    'deviceName' => $deviceData['name'] ?? 'Unknown device'
+                ]);
+
+            $this->notificationManager->notify($notification);
+
+            $this->logger->info('Desktop wipe notification sent', [
+                'user_id' => $userId,
+                'device_name' => $deviceData['name'] ?? 'unknown'
+            ]);
+
+        } catch (\Exception $e) {
+            $this->logger->warning('Failed to send desktop wipe notification', [
+                'error' => $e->getMessage()
+            ]);
         }
     }
 
@@ -132,7 +161,6 @@ class DesktopDriver extends BaseDriver
             'is_active' => $this->isActive($deviceData),
         ];
 
-        // Try to detect platform
         $name = strtolower($deviceData['name'] ?? '');
         foreach (self::SUPPORTED_PLATFORMS as $platform) {
             if (strpos($name, $platform) !== false) {
@@ -141,7 +169,6 @@ class DesktopDriver extends BaseDriver
             }
         }
 
-        // Detect client version
         if (preg_match('/v?(\d+\.\d+\.\d+)/i', $name, $matches)) {
             $info['version'] = $matches[1];
         }

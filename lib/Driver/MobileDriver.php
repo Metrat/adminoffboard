@@ -2,32 +2,11 @@
 
 declare(strict_types=1);
 
-/**
- * @copyright Copyright (c) 2024 Metrat <disparam@gmail.com>
- *
- * @author Metrat <disparam@gmail.com>
- *
- * @license AGPL-3.0-or-later
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
- */
-
 namespace OCA\AdminOffboard\Driver;
 
-/**
- * Mobile device driver
- */
+use OCP\Notification\IManager as INotificationManager;
+use OCP\IUserManager;
+
 class MobileDriver extends BaseDriver
 {
     private const MOBILE_PLATFORMS = [
@@ -45,6 +24,15 @@ class MobileDriver extends BaseDriver
         'mobile-app'
     ];
 
+    public function __construct(
+        $tokenAdapter,
+        $logger,
+        private INotificationManager $notificationManager,
+        private IUserManager $userManager
+    ) {
+        parent::__construct($tokenAdapter, $logger);
+    }
+
     public function getName(): string
     {
         return 'Mobile';
@@ -58,15 +46,13 @@ class MobileDriver extends BaseDriver
     public function supports(array $deviceData): bool
     {
         $name = strtolower($deviceData['name'] ?? '');
-        
-        // Check if it's a mobile device
+
         foreach (self::MOBILE_PLATFORMS as $platform) {
             if (strpos($name, $platform) !== false) {
                 return true;
             }
         }
 
-        // Check device type
         $deviceType = strtolower($deviceData['device_type'] ?? '');
         return in_array($deviceType, ['mobile', 'phone', 'tablet']);
     }
@@ -84,7 +70,6 @@ class MobileDriver extends BaseDriver
         ]);
 
         try {
-            // Check if this mobile client supports remote wipe
             $name = strtolower($deviceData['name'] ?? '');
             $supported = false;
 
@@ -102,17 +87,16 @@ class MobileDriver extends BaseDriver
                 return false;
             }
 
-            // For mobile devices, we also need to send push notification
-            // This is handled by the Nextcloud server
+            // Удаляем токен
             $deleted = $this->tokenAdapter->deleteToken($tokenId);
 
             if ($deleted) {
                 $this->logOperation('remote_wipe_success', [
                     'token_id' => $tokenId
                 ]);
-                
-                // Trigger push notification for immediate wipe
-                $this->triggerMobileWipe($deviceData);
+
+                // Отправляем push для немедленного вайпа
+                $this->sendMobileWipePush($deviceData);
             }
 
             return $deleted;
@@ -125,16 +109,49 @@ class MobileDriver extends BaseDriver
     }
 
     /**
-     * Trigger mobile wipe push notification
+     * Отправка push-уведомления на мобильное устройство
      */
-    private function triggerMobileWipe(array $deviceData): void
+    private function sendMobileWipePush(array $deviceData): void
     {
-        // This would integrate with Nextcloud's push notification service
-        // For now, we just log it
-        $this->logger->info('Mobile wipe trigger requested', [
-            'device_id' => $deviceData['id'] ?? 'unknown',
-            'device_name' => $deviceData['name'] ?? 'unknown'
-        ]);
+        try {
+            $userId = $deviceData['user_id'] ?? null;
+            if (!$userId) {
+                $this->logger->warning('No user_id in device data for push');
+                return;
+            }
+
+            $user = $this->userManager->get($userId);
+            if (!$user) {
+                return;
+            }
+
+            $notification = $this->notificationManager->createNotification();
+            $notification->setApp('adminoffboard')
+                ->setUser($userId)
+                ->setDateTime(new \DateTime())
+                ->setObject('device', (string)($deviceData['id'] ?? 'unknown'))
+                ->setSubject('remote_wipe_mobile', [
+                    'deviceName' => $deviceData['name'] ?? 'Unknown device',
+                    'timestamp' => time()
+                ])
+                ->setMessage('remote_wipe_mobile_message', [
+                    'deviceName' => $deviceData['name'] ?? 'Unknown device'
+                ]);
+
+            $this->notificationManager->notify($notification);
+
+            $this->logger->info('Mobile wipe push notification sent', [
+                'user_id' => $userId,
+                'device_name' => $deviceData['name'] ?? 'unknown'
+            ]);
+
+        } catch (\Exception $e) {
+            // Push не критичен
+            $this->logger->warning('Failed to send mobile wipe push', [
+                'error' => $e->getMessage(),
+                'device_name' => $deviceData['name'] ?? 'unknown'
+            ]);
+        }
     }
 
     public function getDeviceInfo(array $deviceData): array
@@ -148,7 +165,6 @@ class MobileDriver extends BaseDriver
             'is_active' => $this->isActive($deviceData),
         ];
 
-        // Detect platform
         $name = strtolower($deviceData['name'] ?? '');
         foreach (self::MOBILE_PLATFORMS as $platform) {
             if (strpos($name, $platform) !== false) {
@@ -157,7 +173,6 @@ class MobileDriver extends BaseDriver
             }
         }
 
-        // Try to detect model
         if (preg_match('/(iphone|ipad|galaxy|pixel|oneplus)/i', $name, $matches)) {
             $info['model'] = $matches[1];
         }

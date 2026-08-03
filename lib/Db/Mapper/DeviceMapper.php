@@ -2,167 +2,208 @@
 
 declare(strict_types=1);
 
-/**
- * @copyright Copyright (c) 2024 Metrat <disparam@gmail.com>
- *
- * @author Metrat <disparam@gmail.com>
- *
- * @license AGPL-3.0-or-later
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
- */
-
 namespace OCA\AdminOffboard\Db\Mapper;
 
 use OCA\AdminOffboard\Db\Entity\Device;
 use OCP\AppFramework\Db\QBMapper;
-use OCP\IDBConnection;
 use OCP\DB\QueryBuilder\IQueryBuilder;
+use OCP\IDBConnection;
+use OCP\AppFramework\Db\DoesNotExistException;
 
 /**
- * Database mapper for Device entities
+ * @extends QBMapper<Device>
  */
 class DeviceMapper extends QBMapper
 {
-    public const TABLE_NAME = 'adminoffboard_devices';
+    private const TABLE_NAME = 'adminoffboard_devices';
 
-    public function __construct(
-        IDBConnection $db
-    ) {
+    public function __construct(IDBConnection $db)
+    {
         parent::__construct($db, self::TABLE_NAME, Device::class);
     }
 
-    /**
-     * Find device by ID
-     */
-    public function findById(int $id): ?Device
+    public function find(int $id): Device
     {
         $qb = $this->db->getQueryBuilder();
-        
         $qb->select('*')
-            ->from(self::TABLE_NAME)
-            ->where($qb->expr()->eq('id', $qb->createNamedParameter($id)));
-        
+            ->from($this->getTableName())
+            ->where($qb->expr()->eq('id', $qb->createNamedParameter($id, IQueryBuilder::PARAM_INT)));
+
         return $this->findEntity($qb);
     }
 
-    /**
-     * Find devices by user ID
-     */
+    public function findByUserAndToken(string $userId, int $tokenId): Device
+    {
+        $qb = $this->db->getQueryBuilder();
+        $qb->select('*')
+            ->from($this->getTableName())
+            ->where($qb->expr()->eq('user_id', $qb->createNamedParameter($userId)))
+            ->andWhere($qb->expr()->eq('token_id', $qb->createNamedParameter($tokenId, IQueryBuilder::PARAM_INT)));
+
+        return $this->findEntity($qb);
+    }
+
     public function findByUserId(string $userId): array
     {
         $qb = $this->db->getQueryBuilder();
-        
         $qb->select('*')
-            ->from(self::TABLE_NAME)
-            ->where($qb->expr()->eq('user_id', $qb->createNamedParameter($userId)));
-        
-        return $this->findEntities($qb);
-    }
-
-    /**
-     * Find device by device token
-     */
-    public function findByDeviceToken(string $deviceToken): ?Device
-    {
-        $qb = $this->db->getQueryBuilder();
-        
-        $qb->select('*')
-            ->from(self::TABLE_NAME)
-            ->where($qb->expr()->eq('device_token', $qb->createNamedParameter($deviceToken)));
-        
-        return $this->findEntity($qb);
-    }
-
-    /**
-     * Find all devices
-     */
-    public function findAll(int $limit = 100, int $offset = 0): array
-    {
-        $qb = $this->db->getQueryBuilder();
-        
-        $qb->select('*')
-            ->from(self::TABLE_NAME)
-            ->setMaxResults($limit)
-            ->setFirstResult($offset);
-        
-        return $this->findEntities($qb);
-    }
-
-    /**
-     * Find devices by status
-     */
-    public function findByStatus(string $status, int $limit = 100, int $offset = 0): array
-    {
-        $qb = $this->db->getQueryBuilder();
-        
-        $qb->select('*')
-            ->from(self::TABLE_NAME)
-            ->where($qb->expr()->eq('status', $qb->createNamedParameter($status)))
-            ->setMaxResults($limit)
-            ->setFirstResult($offset);
-        
-        return $this->findEntities($qb);
-    }
-
-    /**
-     * Update device status
-     */
-    public function updateStatus(int $id, string $status): void
-    {
-        $qb = $this->db->getQueryBuilder();
-        
-        $qb->update(self::TABLE_NAME)
-            ->set('status', $qb->createNamedParameter($status))
-            ->where($qb->expr()->eq('id', $qb->createNamedParameter($id)))
-            ->executeStatement();
-    }
-
-    /**
-     * Find device by user ID and device ID
-     */
-    public function findByUserAndDeviceId(string $userId, string $deviceId): ?Device
-    {
-        $qb = $this->db->getQueryBuilder();
-        $qb->select("*")
-            ->from(self::TABLE_NAME)
-            ->where($qb->expr()->eq("user_id", $qb->createNamedParameter($userId)))
-            ->andWhere($qb->expr()->eq("id", $qb->createNamedParameter($deviceId, IQueryBuilder::PARAM_INT)));
-        return $this->findEntity($qb);
-    }
-
-    /**
-     * Delete device by ID
-     */
-    public function deleteById(int $id): void
-    {
-        $qb = $this->db->getQueryBuilder();
-        
-        $qb->delete(self::TABLE_NAME)
-            ->where($qb->expr()->eq('id', $qb->createNamedParameter($id)))
-            ->executeStatement();
-    }
-
-    /**
-     * Delete all devices for a user
-     */
-    public function deleteByUserId(string $userId): void
-    {
-        $qb = $this->db->getQueryBuilder();
-        
-        $qb->delete(self::TABLE_NAME)
+            ->from($this->getTableName())
             ->where($qb->expr()->eq('user_id', $qb->createNamedParameter($userId)))
-            ->executeStatement();
+            ->orderBy('last_activity', 'DESC');
+
+        return $this->findEntities($qb);
+    }
+
+    public function findByUserAndDeviceId(string $userId, string $deviceId): Device
+    {
+        $qb = $this->db->getQueryBuilder();
+        $qb->select('*')
+            ->from($this->getTableName())
+            ->where($qb->expr()->eq('user_id', $qb->createNamedParameter($userId)))
+            ->andWhere($qb->expr()->eq('id', $qb->createNamedParameter($deviceId, IQueryBuilder::PARAM_INT)));
+
+        return $this->findEntity($qb);
+    }
+
+    public function findByType(string $deviceType): array
+    {
+        $qb = $this->db->getQueryBuilder();
+        $qb->select('*')
+            ->from($this->getTableName())
+            ->where($qb->expr()->eq('device_type', $qb->createNamedParameter($deviceType)));
+
+        return $this->findEntities($qb);
+    }
+
+    public function findWipeSupported(): array
+    {
+        $qb = $this->db->getQueryBuilder();
+        $qb->select('*')
+            ->from($this->getTableName())
+            ->where($qb->expr()->eq('wipe_supported', $qb->createNamedParameter(true, IQueryBuilder::PARAM_BOOL)));
+
+        return $this->findEntities($qb);
+    }
+
+    public function findPendingWipes(): array
+    {
+        $qb = $this->db->getQueryBuilder();
+        $qb->select('*')
+            ->from($this->getTableName())
+            ->where($qb->expr()->eq('wipe_status', $qb->createNamedParameter(Device::WIPE_STATUS_PENDING)));
+
+        return $this->findEntities($qb);
+    }
+
+    public function findFailedWipes(): array
+    {
+        $qb = $this->db->getQueryBuilder();
+        $qb->select('*')
+            ->from($this->getTableName())
+            ->where($qb->expr()->eq('wipe_status', $qb->createNamedParameter(Device::WIPE_STATUS_FAILED)));
+
+        return $this->findEntities($qb);
+    }
+
+    public function deleteByUser(string $userId): int
+    {
+        $qb = $this->db->getQueryBuilder();
+        $qb->delete($this->getTableName())
+            ->where($qb->expr()->eq('user_id', $qb->createNamedParameter($userId)));
+
+        return $qb->executeStatement();
+    }
+
+    public function deleteOldDevices(int $timestamp): int
+    {
+        $qb = $this->db->getQueryBuilder();
+        $qb->delete($this->getTableName())
+            ->where($qb->expr()->lt('last_activity', $qb->createNamedParameter($timestamp, IQueryBuilder::PARAM_INT)));
+
+        return $qb->executeStatement();
+    }
+
+    public function countByUser(string $userId): int
+    {
+        $qb = $this->db->getQueryBuilder();
+        $qb->select($qb->expr()->count('id', 'count'))
+            ->from($this->getTableName())
+            ->where($qb->expr()->eq('user_id', $qb->createNamedParameter($userId)));
+
+        $result = $qb->executeQuery();
+        $row = $result->fetch();
+        $result->closeCursor();
+
+        return $row ? (int)$row['count'] : 0;
+    }
+
+    public function countAll(): int
+    {
+        $qb = $this->db->getQueryBuilder();
+        $qb->select($qb->expr()->count('id', 'count'))
+            ->from($this->getTableName());
+
+        $result = $qb->executeQuery();
+        $row = $result->fetch();
+        $result->closeCursor();
+
+        return $row ? (int)$row['count'] : 0;
+    }
+
+    public function countWipeSupported(): int
+    {
+        $qb = $this->db->getQueryBuilder();
+        $qb->select($qb->expr()->count('id', 'count'))
+            ->from($this->getTableName())
+            ->where($qb->expr()->eq('wipe_supported', $qb->createNamedParameter(true, IQueryBuilder::PARAM_BOOL)));
+
+        $result = $qb->executeQuery();
+        $row = $result->fetch();
+        $result->closeCursor();
+
+        return $row ? (int)$row['count'] : 0;
+    }
+
+    public function countActive(): int
+    {
+        $sevenDaysAgo = time() - (7 * 24 * 60 * 60);
+        $qb = $this->db->getQueryBuilder();
+        $qb->select($qb->expr()->count('id', 'count'))
+            ->from($this->getTableName())
+            ->where($qb->expr()->gt('last_activity', $qb->createNamedParameter($sevenDaysAgo, IQueryBuilder::PARAM_INT)));
+
+        $result = $qb->executeQuery();
+        $row = $result->fetch();
+        $result->closeCursor();
+
+        return $row ? (int)$row['count'] : 0;
+    }
+
+    public function countByType(string $deviceType): int
+    {
+        $qb = $this->db->getQueryBuilder();
+        $qb->select($qb->expr()->count('id', 'count'))
+            ->from($this->getTableName())
+            ->where($qb->expr()->eq('device_type', $qb->createNamedParameter($deviceType)));
+
+        $result = $qb->executeQuery();
+        $row = $result->fetch();
+        $result->closeCursor();
+
+        return $row ? (int)$row['count'] : 0;
+    }
+
+    public function countByWipeStatus(string $status): int
+    {
+        $qb = $this->db->getQueryBuilder();
+        $qb->select($qb->expr()->count('id', 'count'))
+            ->from($this->getTableName())
+            ->where($qb->expr()->eq('wipe_status', $qb->createNamedParameter($status)));
+
+        $result = $qb->executeQuery();
+        $row = $result->fetch();
+        $result->closeCursor();
+
+        return $row ? (int)$row['count'] : 0;
     }
 }

@@ -2,41 +2,19 @@
 
 declare(strict_types=1);
 
-/**
- * @copyright Copyright (c) 2024 Metrat <disparam@gmail.com>
- *
- * @author Metrat <disparam@gmail.com>
- *
- * @license AGPL-3.0-or-later
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
- */
-
 namespace OCA\AdminOffboard\Adapter;
 
 use OCA\AdminOffboard\Db\Entity\Device;
 use OCA\AdminOffboard\Db\Repository\DeviceRepository;
+use OCP\Notification\IManager as INotificationManager;
+use OCP\IUserManager;
+use Psr\Log\LoggerInterface;
 
-/**
- * Device management adapter
- */
 class DeviceAdapter
 {
-    /**
-     * Known device types that support remote wipe
-     */
     private const WIPE_SUPPORTED_DEVICES = [
+        'mirall',
+        'nextcloud',
         'nextcloud-desktop',
         'nextcloud-mobile-ios',
         'nextcloud-mobile-android',
@@ -48,28 +26,32 @@ class DeviceAdapter
 
     public function __construct(
         private DeviceRepository $deviceRepository,
-        private TokenAdapter $tokenAdapter
+        private TokenAdapter $tokenAdapter,
+        private INotificationManager $notificationManager,
+        private IUserManager $userManager,
+        private LoggerInterface $logger
     ) {
     }
 
-    /**
-     * Get user devices
-     */
-
-    /**
-     * Remote wipe all devices for a user
-     */
     public function remoteWipeUserDevices(string $userId): int
     {
-        // Placeholder - needs implementation
-        return (int) $this->remoteWipeUser($userId);
+        $devices = $this->syncUserDevices($userId);
+        $count = 0;
+
+        foreach ($devices as $device) {
+            if ($device->isWipeSupported()) {
+                $this->remoteWipeDevice($device->getId());
+                $count++;
+            }
+        }
+
+        return $count;
     }
+
     public function getUserDevices(string $userId): array
     {
-        // Get cached devices from repository
         $devices = $this->deviceRepository->findByUser($userId);
 
-        // If no cached devices, sync from tokens
         if (empty($devices)) {
             return $this->syncUserDevices($userId);
         }
@@ -77,54 +59,38 @@ class DeviceAdapter
         return $devices;
     }
 
-    /**
-     * Get device by ID
-     */
     public function getDevice(int $deviceId): ?Device
     {
         return $this->deviceRepository->find($deviceId);
     }
 
-    /**
-     * Sync devices for a user from token data
-     */
     public function syncUserDevices(string $userId): array
     {
+        $this->deviceRepository->deleteByUser($userId);
+
         $tokens = $this->tokenAdapter->getUserTokens($userId);
         $devices = [];
 
         foreach ($tokens as $token) {
-            $device = $this->createOrUpdateDevice($userId, $token);
+            $device = $this->createDevice($userId, $token);
             if ($device) {
                 $devices[] = $device;
             }
         }
 
+        $this->logger->info('Synced devices for user', [
+            'user_id' => $userId,
+            'count' => count($devices)
+        ]);
+
         return $devices;
     }
 
-    /**
-     * Create or update device from token data
-     */
-    private function createOrUpdateDevice(string $userId, array $tokenData): ?Device
+    private function createDevice(string $userId, array $tokenData): ?Device
     {
-        $tokenId = (int)$tokenData['id'];
-        
-        // Check if device exists
-        $existing = $this->deviceRepository->findByUserAndToken($userId, $tokenId);
-        
-        if ($existing) {
-            // Update existing device
-            $existing->setDeviceName($tokenData['name'] ?? 'Unknown Device');
-            $existing->setLastActivity($tokenData['last_activity'] ?? time());
-            $existing->setUpdatedAt(time());
-            return $this->deviceRepository->update($existing);
-        }
-
-        // Create new device
         $device = new Device();
         $device->setUserId($userId);
-        $device->setTokenId($tokenId);
+        $device->setTokenId((int)$tokenData['id']);
         $device->setDeviceName($tokenData['name'] ?? 'Unknown Device');
         $device->setDeviceType($this->detectDeviceType($tokenData));
         $device->setLastActivity($tokenData['last_activity'] ?? time());
@@ -135,51 +101,41 @@ class DeviceAdapter
         return $this->deviceRepository->create($device);
     }
 
-    /**
-     * Detect device type from token data
-     */
     private function detectDeviceType(array $tokenData): string
     {
         $name = strtolower($tokenData['name'] ?? '');
-        
-        if (strpos($name, 'desktop') !== false) {
+
+        if (strpos($name, 'desktop') !== false || strpos($name, 'mirall') !== false) {
             return 'desktop';
         }
-        
+
         if (strpos($name, 'mobile') !== false || strpos($name, 'phone') !== false) {
             return 'mobile';
         }
-        
+
         if (strpos($name, 'browser') !== false || strpos($name, 'web') !== false) {
             return 'web';
         }
-        
+
         return 'unknown';
     }
 
-    /**
-     * Check if device supports remote wipe
-     */
     private function isWipeSupported(array $tokenData): bool
     {
         $name = strtolower($tokenData['name'] ?? '');
-        
+
         foreach (self::WIPE_SUPPORTED_DEVICES as $supported) {
             if (strpos($name, $supported) !== false) {
                 return true;
             }
         }
-        
+
         return false;
     }
 
-    /**
-     * Remote wipe all devices for a user
-     */
     public function remoteWipeUser(string $userId, ?string $deviceId = null): bool
     {
         if ($deviceId) {
-            // Wipe specific device
             $device = $this->deviceRepository->findByUserAndDeviceId($userId, $deviceId);
             if ($device) {
                 return $this->remoteWipeDevice($device->getId());
@@ -187,7 +143,6 @@ class DeviceAdapter
             return false;
         }
 
-        // Wipe all devices
         $devices = $this->getUserDevices($userId);
         $success = true;
 
@@ -203,31 +158,80 @@ class DeviceAdapter
         return $success;
     }
 
-    /**
-     * Remote wipe a specific device
-     */
     public function remoteWipeDevice(int $deviceId): bool
     {
         $device = $this->deviceRepository->find($deviceId);
         if (!$device || !$device->isWipeSupported()) {
+            $this->logger->warning('Device not found or wipe not supported', [
+                'device_id' => $deviceId
+            ]);
             return false;
         }
 
-        // Delete the device token (effectively wiping it)
-        $deleted = $this->tokenAdapter->deleteToken($device->getTokenId());
-        
-        if ($deleted) {
-            $device->setWipeSupported(false); // Device is now wiped
-            $this->deviceRepository->update($device);
-            return true;
-        }
+        $userId = $device->getUserId();
+        $tokenId = $device->getTokenId();
 
-        return false;
+        try {
+            $device->setWipeStatus(Device::WIPE_STATUS_PENDING);
+            $device->setWipeRequestedAt(time());
+            $this->deviceRepository->update($device);
+
+            $this->logger->info('Remote wipe initiated', [
+                'device_id' => $deviceId,
+                'user_id' => $userId,
+                'token_id' => $tokenId,
+                'device_name' => $device->getDeviceName()
+            ]);
+
+            $tokenDeleted = $this->tokenAdapter->deleteToken($tokenId);
+
+            if (!$tokenDeleted) {
+                $device->setWipeStatus(Device::WIPE_STATUS_FAILED);
+                $this->deviceRepository->update($device);
+                return false;
+            }
+
+            $this->sendWipePushNotification($userId, $device);
+
+            $device->setWipeStatus(Device::WIPE_STATUS_COMPLETED);
+            $device->setWipeCompletedAt(time());
+            $this->deviceRepository->update($device);
+
+            $this->logger->info('Remote wipe completed successfully', [
+                'device_id' => $deviceId,
+                'user_id' => $userId,
+            ]);
+
+            return true;
+
+        } catch (\Exception $e) {
+            $device->setWipeStatus(Device::WIPE_STATUS_FAILED);
+            $this->deviceRepository->update($device);
+
+            $this->logger->error('Remote wipe failed: ' . $e->getMessage());
+            return false;
+        }
     }
 
-    /**
-     * Check if remote wipe is supported for device
-     */
+    private function sendWipePushNotification(string $userId, Device $device): void
+    {
+        try {
+            $notification = $this->notificationManager->createNotification();
+            $notification->setApp('adminoffboard')
+                ->setUser($userId)
+                ->setDateTime(new \DateTime())
+                ->setObject('device', (string)$device->getId())
+                ->setSubject('remote_wipe', [
+                    'deviceName' => $device->getDeviceName() ?? 'Unknown device',
+                    'timestamp' => time()
+                ]);
+
+            $this->notificationManager->notify($notification);
+        } catch (\Exception $e) {
+            $this->logger->warning('Failed to send wipe push: ' . $e->getMessage());
+        }
+    }
+
     public function isRemoteWipeSupported(string $userId, int $tokenId): bool
     {
         $device = $this->deviceRepository->findByUserAndToken($userId, $tokenId);

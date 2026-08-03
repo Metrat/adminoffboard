@@ -4,36 +4,46 @@ declare(strict_types=1);
 
 namespace OCA\AdminOffboard\Logger;
 
-class AppLogger
+use Psr\Log\LoggerInterface;
+use Psr\Log\AbstractLogger;
+use Stringable;
+
+class AppLogger extends AbstractLogger implements LoggerInterface
 {
     public function __construct(
         private string $appId
     ) {
     }
 
-    public function debug(string $message, array $context = []): void
+    public function log($level, Stringable|string $message, array $context = []): void
     {
-        error_log("[AdminOffboard][DEBUG] $message");
+        $level = strtoupper((string)$level);
+        error_log("[AdminOffboard][$level] $message");
     }
 
-    public function info(string $message, array $context = []): void
+    public function info(Stringable|string $message, array $context = []): void
     {
-        error_log("[AdminOffboard][INFO] $message");
+        $this->log('info', $message, $context);
     }
 
-    public function warning(string $message, array $context = []): void
+    public function warning(Stringable|string $message, array $context = []): void
     {
-        error_log("[AdminOffboard][WARNING] $message");
+        $this->log('warning', $message, $context);
     }
 
-    public function error(string $message, array $context = []): void
+    public function error(Stringable|string $message, array $context = []): void
     {
-        error_log("[AdminOffboard][ERROR] $message");
+        $this->log('error', $message, $context);
     }
 
-    public function fatal(string $message, array $context = []): void
+    public function debug(Stringable|string $message, array $context = []): void
     {
-        error_log("[AdminOffboard][FATAL] $message");
+        $this->log('debug', $message, $context);
+    }
+
+    public function fatal(Stringable|string $message, array $context = []): void
+    {
+        $this->log('critical', $message, $context);
     }
 
     public function withContext(array $context): self

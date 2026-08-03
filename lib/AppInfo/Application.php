@@ -18,6 +18,7 @@ use OCA\AdminOffboard\Db\Repository\DeviceRepository;
 use OCA\AdminOffboard\Db\Repository\JobRepository;
 use OCA\AdminOffboard\Driver\DriverFactory;
 use OCA\AdminOffboard\Logger\LoggerFactory;
+use OCA\AdminOffboard\Notification\Notifier;
 use OCA\AdminOffboard\Queue\JobProcessor;
 use OCA\AdminOffboard\Queue\JobQueue;
 use OCA\AdminOffboard\Queue\QueueManager;
@@ -30,6 +31,8 @@ use OCP\IDBConnection;
 use OCP\IUserManager;
 use OCP\IUserSession;
 use OCP\Security\ISecureRandom;
+use OCP\Notification\IManager as INotificationManager;
+use Psr\Log\LoggerInterface;
 
 class Application extends App implements IBootstrap
 {
@@ -42,6 +45,9 @@ class Application extends App implements IBootstrap
 
     public function register(IRegistrationContext $context): void
     {
+        // Register Notifier
+        $context->registerNotifierService(Notifier::class);
+
         // Configuration
         $context->registerService(AppConfig::class, function($c) {
             return new AppConfig(
@@ -106,7 +112,10 @@ class Application extends App implements IBootstrap
         $context->registerService(DeviceAdapter::class, function($c) {
             return new DeviceAdapter(
                 $c->get(DeviceRepository::class),
-                $c->get(TokenAdapter::class)
+                $c->get(TokenAdapter::class),
+                $c->get(INotificationManager::class),
+                $c->get(IUserManager::class),
+                $c->get(LoggerFactory::class)->getLogger()
             );
         });
 
@@ -135,7 +144,9 @@ class Application extends App implements IBootstrap
         $context->registerService(DriverFactory::class, function($c) {
             return new DriverFactory(
                 $c->get(TokenAdapter::class),
-                $c->get(LoggerFactory::class)->getLogger()
+                $c->get(LoggerFactory::class)->getLogger(),
+                $c->get(INotificationManager::class),
+                $c->get(IUserManager::class)
             );
         });
 
@@ -164,9 +175,6 @@ class Application extends App implements IBootstrap
                 $c->get(NextcloudAdapter::class)
             );
         });
-
-        // Register OCC commands
-       
     }
 
     public function boot(IBootContext $context): void

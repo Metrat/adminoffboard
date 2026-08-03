@@ -2,27 +2,6 @@
 
 declare(strict_types=1);
 
-/**
- * @copyright Copyright (c) 2024 Metrat <disparam@gmail.com>
- *
- * @author Metrat <disparam@gmail.com>
- *
- * @license AGPL-3.0-or-later
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
- */
-
 namespace OCA\AdminOffboard\Db\Entity;
 
 use OCP\AppFramework\Db\Entity;
@@ -42,6 +21,12 @@ use OCP\AppFramework\Db\Entity;
  * @method void setLastActivity(?int $lastActivity)
  * @method bool getWipeSupported()
  * @method void setWipeSupported(bool $wipeSupported)
+ * @method string|null getWipeStatus()
+ * @method void setWipeStatus(?string $wipeStatus)
+ * @method int|null getWipeRequestedAt()
+ * @method void setWipeRequestedAt(?int $wipeRequestedAt)
+ * @method int|null getWipeCompletedAt()
+ * @method void setWipeCompletedAt(?int $wipeCompletedAt)
  * @method int getCreatedAt()
  * @method void setCreatedAt(int $createdAt)
  * @method int getUpdatedAt()
@@ -50,31 +35,45 @@ use OCP\AppFramework\Db\Entity;
 class Device extends Entity
 {
     /** @var int */
-    protected $id;
+    public $id;
 
     /** @var string */
-    protected $userId;
+    public $userId;
 
     /** @var int */
-    protected $tokenId;
+    public $tokenId;
 
     /** @var string|null */
-    protected $deviceType;
+    public $deviceType;
 
     /** @var string|null */
-    protected $deviceName;
+    public $deviceName;
 
     /** @var int|null */
-    protected $lastActivity;
+    public $lastActivity;
 
     /** @var bool */
-    protected $wipeSupported;
+    public $wipeSupported;
+
+    /** @var string|null */
+    public $wipeStatus;
+
+    /** @var int|null */
+    public $wipeRequestedAt;
+
+    /** @var int|null */
+    public $wipeCompletedAt;
 
     /** @var int */
-    protected $createdAt;
+    public $createdAt;
 
     /** @var int */
-    protected $updatedAt;
+    public $updatedAt;
+
+    public const WIPE_STATUS_PENDING = 'pending';
+    public const WIPE_STATUS_IN_PROGRESS = 'in_progress';
+    public const WIPE_STATUS_COMPLETED = 'completed';
+    public const WIPE_STATUS_FAILED = 'failed';
 
     public function __construct()
     {
@@ -85,13 +84,13 @@ class Device extends Entity
         $this->addType('deviceName', 'string');
         $this->addType('lastActivity', 'integer');
         $this->addType('wipeSupported', 'boolean');
+        $this->addType('wipeStatus', 'string');
+        $this->addType('wipeRequestedAt', 'integer');
+        $this->addType('wipeCompletedAt', 'integer');
         $this->addType('createdAt', 'integer');
         $this->addType('updatedAt', 'integer');
     }
 
-    /**
-     * Check if device is active (activity within last 7 days)
-     */
     public function isActive(): bool
     {
         if ($this->lastActivity === null) {
@@ -100,19 +99,31 @@ class Device extends Entity
         return (time() - $this->lastActivity) < (7 * 24 * 60 * 60);
     }
 
-    /**
-     * Check if device supports remote wipe
-     */
     public function isWipeSupported(): bool
     {
         return $this->wipeSupported;
     }
 
-    /**
-     * Get device age in days
-     */
+    public function isWipePending(): bool
+    {
+        return $this->wipeStatus === self::WIPE_STATUS_PENDING;
+    }
+
+    public function isWipeCompleted(): bool
+    {
+        return $this->wipeStatus === self::WIPE_STATUS_COMPLETED;
+    }
+
     public function getAgeInDays(): int
     {
         return (int)((time() - $this->createdAt) / (24 * 60 * 60));
+    }
+
+    public function getWipeAgeInSeconds(): ?int
+    {
+        if ($this->wipeRequestedAt === null) {
+            return null;
+        }
+        return time() - $this->wipeRequestedAt;
     }
 }
