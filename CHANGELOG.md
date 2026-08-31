@@ -1,57 +1,68 @@
-
-### 13. CHANGELOG.md
-
-```markdown
 # Changelog
 
 All notable changes to this project will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-
-## [0.1.0] - 2024-11-01
+## [0.2.3] - 2026-08-31
 
 ### Added
-- Initial project foundation
-- Application structure and configuration
-- Database schema for jobs, audit logs, and devices
-- Basic routes and navigation
-- Installation and repair steps
-- OCC command registration
-- Composer configuration with PHP 8.2+ support
-- PSR-12 coding standards
-- PHPUnit test configuration
-- Static analysis tools (PHPStan, Psalm)
-- Build automation (Makefile)
-- Documentation (README, LICENSE, CHANGELOG)
+- Updated README with full documentation
+- Complete CHANGELOG history
 
-### Features
-- Foundation for all planned functionality:
-  - Mass device token management
-  - Remote wipe capabilities
-  - Mass user disabling
-  - Queue system for async operations
-  - Audit trail
-  - Workflow engine
-  - Driver layer architecture
-  - REST API
-  - Admin UI
-  - OCC commands
+## [0.2.2] - 2026-08-31
 
-### Technical
-- Architecture freeze v1.0
-- Multi-layer architecture implemented
-- Dependency Injection ready
-- Only public OCP API usage
-- Idempotent operations design
-- Dry-run support prepared
-- Database migration system
-- Background job infrastructure
-- Activity and settings integration
+### Added
+- PHPUnit test suite (9 tests, 14 assertions)
+- AppConfig::getAppId(), getAppVersion()
+- tests/bootstrap.php
 
-### Documentation
-- Complete README with features, requirements, and usage
-- Architecture diagram and description
-- Development setup instructions
-- Testing and building guidelines
-- License information
+### Fixed
+- TokenAdapter: createFunction for count
+- phpunit.xml warnings
+
+## [0.2.1] - 2026-08-31
+
+### Fixed
+- ProcessQueueJob: processJobs returns int, not array
+- JobMapper: createFunction instead of expr()->count()
+- Job entity: public properties for Nextcloud 34
+- Migration steps removed from info.xml
+
+## [0.2.0] - 2026-08-12
+
+### Added
+- ProcessQueueJob background job (5 min interval)
+- Web UI assets (css, js, img, templates)
+- PageController
+
+### Fixed
+- AuditLog Entity: public properties
+- AppLogger: PSR-3 LoggerInterface
+
+## [0.1.9] - 2026-08-05
+
+### Added
+- Real Remote Wipe implementation
+- Push notifications (Notifier)
+- Wipe status tracking (pending → completed)
+- DeviceAdapter: force sync before wipe
+
+### Fixed
+- AppLogger: PSR-3 compatibility
+- Device Entity: public properties
+- DeviceMapper: find() method
+
+## [0.1.8] - 2026-08-03
+
+### Added
+- Database migrations (audit, devices, jobs)
+- database.xml schema
+- InstallSchema repair step
+
+### Fixed
+- TokenAdapter: executeQuery for SELECT
+- RemoteWipe command error handling
+
+## [0.1.7] - Initial release
+
+- 6 console commands
+- Basic device management

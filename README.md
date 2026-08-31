@@ -3,58 +3,27 @@
 [![Nextcloud](https://img.shields.io/badge/Nextcloud-34-blue.svg)](https://nextcloud.com/)
 [![PHP](https://img.shields.io/badge/PHP-8.2+-purple.svg)](https://php.net/)
 [![License](https://img.shields.io/badge/License-AGPLv3-blue.svg)](LICENSE)
-[![CI](https://github.com/Metrat/adminoffboard/actions/workflows/ci.yml/badge.svg)](https://github.com/Metrat/adminoffboard/actions/workflows/ci.yml)
-[![Code Coverage](https://codecov.io/gh/Metrat/adminoffboard/branch/main/graph/badge.svg)](https://codecov.io/gh/Metrat/adminoffboard)
-[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/Metrat/adminoffboard/badges/quality-score.png?b=main)](https://scrutinizer-ci.com/g/Metrat/adminoffboard/?branch=main)
+[![Version](https://img.shields.io/badge/Version-0.2.3-green.svg)](https://github.com/Metrat/adminoffboard/releases)
 
 ## 🚀 Enterprise Administration Tool for Nextcloud
 
-Admin Offboard is a powerful administration extension for Nextcloud that provides enterprise-grade user offboarding and device management capabilities.
+Admin Offboard provides enterprise-grade user offboarding and device management capabilities for Nextcloud 34.
+
+## ✨ Features
+
+- **6 Console Commands** — test, users:disable, tokens:delete, offboard, process-queue, remote-wipe
+- **Remote Wipe** — реальное удаление токенов устройств с push-уведомлениями
+- **Background Jobs** — автоматическая обработка очереди каждые 5 минут
+- **Audit Logging** — полный аудит всех операций
+- **Device Management** — синхронизация устройств из токенов
+- **Queue System** — отложенные операции с retry
 
 ## 📦 Installation
 
-### From Nextcloud App Store
-1. Open Nextcloud Apps
-2. Search for "Admin Offboard"
-3. Click Install
-
-### From GitHub
 ```bash
 cd /path/to/nextcloud/apps
 git clone https://github.com/Metrat/adminoffboard.git
 cd adminoffboard
 composer install --no-dev
-php occ app:enable adminoffboard
-
-Quick Start
-# Offboard a user
-php occ adminoffboard:offboard --user=username
-
-# Disable multiple users
-php occ adminoffboard:disable-users --users=user1,user2,user3
-
-# Process queue
-php occ adminoffboard:process-queue
-
-# View audit logs
-php occ adminoffboard:audit
-
-🔒 Security
-All operations require admin privileges
-
-Full audit logging
-
-Idempotent operations
-
-Dry-run support
-
-Only uses public OCP API
-
-🤝 Contributing
-Please read CONTRIBUTING.md for details on our code of conduct and the process for submitting pull requests.
-
-📄 License
-This project is licensed under the AGPL-3.0 License - see the LICENSE file for details.
-
-🙏 Credits
-Developed by Metrat
+chown -R www-data:www-data .
+sudo -u www-data php occ app:enable adminoffboard
