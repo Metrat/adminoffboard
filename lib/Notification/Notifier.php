@@ -6,6 +6,7 @@ namespace OCA\AdminOffboard\Notification;
 
 use OCP\Notification\INotification;
 use OCP\Notification\INotifier;
+use OCP\Notification\UnknownNotificationException;
 use OCP\IL10N;
 
 class Notifier implements INotifier
@@ -28,10 +29,8 @@ class Notifier implements INotifier
     public function prepare(INotification $notification, string $languageCode): INotification
     {
         if ($notification->getApp() !== 'adminoffboard') {
-            throw new \InvalidArgumentException('Unknown app');
+            throw new UnknownNotificationException('Notification is not from adminoffboard');
         }
-
-        $l = $this->l;
 
         switch ($notification->getSubject()) {
             case 'remote_wipe':
@@ -41,19 +40,15 @@ class Notifier implements INotifier
                 $deviceName = $parameters['deviceName'] ?? $this->l->t('Unknown device');
 
                 $notification->setParsedSubject(
-                    $l->t('Remote wipe initiated for %s', [$deviceName])
+                    $this->l->t('Remote wipe initiated for %s', [$deviceName])
                 );
                 $notification->setParsedMessage(
-                    $l->t('Your device "%s" has been remotely wiped by an administrator. All local data will be removed on next sync.', [$deviceName])
-                );
-
-                $notification->setIcon(
-                    $notification->getApp() . '/img/app-dark.svg'
+                    $this->l->t('Your device "%s" has been remotely wiped by an administrator. All local data will be removed on next sync.', [$deviceName])
                 );
                 break;
 
             default:
-                throw new \InvalidArgumentException('Unknown subject: ' . $notification->getSubject());
+                throw new UnknownNotificationException('Unknown subject: ' . $notification->getSubject());
         }
 
         return $notification;
