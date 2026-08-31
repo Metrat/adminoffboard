@@ -60,7 +60,7 @@ class TokenAdapter
         $qb->delete(self::TOKEN_TABLE)
             ->where($qb->expr()->eq('uid', $qb->createNamedParameter($userId)));
 
-        return $qb->executeStatement() > 0;
+        return $qb->executeQuery() > 0;
     }
 
     /**
@@ -72,7 +72,7 @@ class TokenAdapter
         $qb->delete(self::TOKEN_TABLE)
             ->where($qb->expr()->eq('id', $qb->createNamedParameter($tokenId, IQueryBuilder::PARAM_INT)));
 
-        return $qb->executeStatement() > 0;
+        return $qb->executeQuery() > 0;
     }
 
     /**
@@ -115,7 +115,7 @@ class TokenAdapter
     public function countUserTokens(string $userId): int
     {
         $qb = $this->db->getQueryBuilder();
-        $qb->select($qb->expr()->count('id', 'count'))
+        $qb->select($qb->createFunction('COUNT(*) AS count'))
             ->from(self::TOKEN_TABLE)
             ->where($qb->expr()->eq('uid', $qb->createNamedParameter($userId)));
 
@@ -153,6 +153,6 @@ class TokenAdapter
         $qb->delete(self::TOKEN_TABLE)
             ->where($qb->expr()->lt('last_activity', $qb->createNamedParameter($timestamp)));
 
-        return $qb->executeStatement();
+        return $qb->executeQuery();
     }
 }

@@ -24,14 +24,6 @@
     </testsuites>
 
     <coverage>
-        <include>
-            <directory suffix=".php">lib</directory>
-        </include>
-        <exclude>
-            <directory suffix=".php">lib/Migration</directory>
-            <directory suffix=".php">lib/AppInfo</directory>
-            <directory suffix=".php">lib/Controller</directory>
-        </exclude>
         <report>
             <html outputDirectory="coverage" />
             <text outputFile="coverage.txt" />
@@ -49,19 +41,6 @@
     </php>
 
     <source>
-        <include>
-            <directory suffix=".php">lib</directory>
-        </include>
-        <exclude>
-            <directory suffix=".php">lib/Migration</directory>
-            <directory suffix=".php">lib/AppInfo</directory>
-        </exclude>
     </source>
 
-    <groups>
-        <exclude>
-            <group>integration</group>
-            <group>performance</group>
-        </exclude>
-    </groups>
 </phpunit>
