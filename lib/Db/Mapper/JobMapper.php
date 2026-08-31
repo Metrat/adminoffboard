@@ -153,11 +153,11 @@ class JobMapper extends QBMapper
     public function countByStatus(string $status): int
     {
         $qb = $this->db->getQueryBuilder();
-        $qb->select($qb->expr()->count('id', 'count'))
+        $qb->select($qb->createFunction('COUNT(*) AS count'))
             ->from($this->getTableName())
             ->where($qb->expr()->eq('status', $qb->createNamedParameter($status)));
 
-        $result = $qb->executeStatement();
+        $result = $qb->executeQuery();
         $row = $result->fetch();
         $result->closeCursor();
 
@@ -176,7 +176,7 @@ class JobMapper extends QBMapper
             ->where($qb->expr()->eq('status', $qb->createNamedParameter(Job::STATUS_COMPLETED)))
             ->andWhere($qb->expr()->lt('completed_at', $qb->createNamedParameter($cutoff)));
 
-        return $qb->executeStatement();
+        return $qb->executeQuery();
     }
 
     /**

@@ -26,8 +26,8 @@ class InstallSchema implements IRepairStep
         $schemaChanged = false;
 
         // Таблица audit
-        if (!$schema->hasTable('adminoffboard_audit')) {
-            $table = $schema->createTable('adminoffboard_audit');
+        if (!$schema->hasTable('*dbprefix*adminoffboard_audit')) {
+            $table = $schema->createTable('*dbprefix*adminoffboard_audit');
             $table->addColumn('id', 'integer', ['autoincrement' => true, 'notnull' => true]);
             $table->addColumn('action', 'string', ['notnull' => true, 'length' => 64]);
             $table->addColumn('user_id', 'string', ['notnull' => true, 'length' => 64]);
@@ -46,8 +46,8 @@ class InstallSchema implements IRepairStep
         }
 
         // Таблица devices
-        if (!$schema->hasTable('adminoffboard_devices')) {
-            $table = $schema->createTable('adminoffboard_devices');
+        if (!$schema->hasTable('*dbprefix*adminoffboard_devices')) {
+            $table = $schema->createTable('*dbprefix*adminoffboard_devices');
             $table->addColumn('id', 'integer', ['autoincrement' => true, 'notnull' => true]);
             $table->addColumn('user_id', 'string', ['notnull' => true, 'length' => 64]);
             $table->addColumn('token_id', 'integer', ['notnull' => true]);
@@ -65,8 +65,8 @@ class InstallSchema implements IRepairStep
         }
 
         // Таблица jobs
-        if (!$schema->hasTable('adminoffboard_jobs')) {
-            $table = $schema->createTable('adminoffboard_jobs');
+        if (!$schema->hasTable('*dbprefix*adminoffboard_jobs')) {
+            $table = $schema->createTable('*dbprefix*adminoffboard_jobs');
             $table->addColumn('id', 'integer', ['autoincrement' => true, 'notnull' => true]);
             $table->addColumn('job_type', 'string', ['notnull' => true, 'length' => 32]);
             $table->addColumn('status', 'string', ['notnull' => true, 'length' => 32, 'default' => 'pending']);

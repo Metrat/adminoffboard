@@ -20,13 +20,6 @@
         <php min-version="8.2"/>
         <nextcloud min-version="26" max-version="34"/>
     </dependencies>
-    <repair-steps>
-        <post-migration>
-            <step>OCA\AdminOffboard\Migration\InstallSchema</step>
-            <step>OCA\AdminOffboard\Migration\Version0001Date20260803</step>
-            <step>OCA\AdminOffboard\Migration\Version0002Date20260803</step>
-        </post-migration>
-    </repair-steps>
     <commands>
         <command>OCA\AdminOffboard\Command\TestCommand</command>
         <command>OCA\AdminOffboard\Command\OffboardUser</command>

@@ -69,43 +69,43 @@ class Job extends Entity
     public const TYPE_REMOTE_WIPE = 'remote_wipe';
 
     /** @var int */
-    protected $id;
+    public $id;
 
     /** @var string */
-    protected $jobType;
+    public $jobType;
 
     /** @var string */
-    protected $status;
+    public $status;
 
     /** @var array */
-    protected $payload;
+    public $payload;
 
     /** @var string|null */
-    protected $userId;
+    public $userId;
 
     /** @var string|null */
-    protected $createdBy;
+    public $createdBy;
 
     /** @var int */
-    protected $createdAt;
+    public $createdAt;
 
     /** @var int|null */
-    protected $startedAt;
+    public $startedAt;
 
     /** @var int|null */
-    protected $completedAt;
+    public $completedAt;
 
     /** @var int */
-    protected $attempts;
+    public $attempts;
 
     /** @var int */
-    protected $maxAttempts;
+    public $maxAttempts;
 
     /** @var string|null */
-    protected $errorMessage;
+    public $errorMessage;
 
     /** @var int */
-    protected $priority;
+    public $priority;
 
     public function __construct()
     {

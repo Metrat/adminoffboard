@@ -23,15 +23,21 @@ class ProcessQueueJob extends TimedJob
     protected function run($argument): void
     {
         $this->logger->info('AdminOffboard: Processing queue via background job');
-        
+
         try {
-            $stats = $this->queueManager->processJobs(10);
-            
-            if ($stats['processed'] > 0 || $stats['failed'] > 0) {
+            $processed = $this->queueManager->processJobs(10);
+
+            if ($processed > 0) {
                 $this->logger->info('AdminOffboard: Queue processing completed', [
-                    'processed' => $stats['processed'],
-                    'failed' => $stats['failed'],
-                    'remaining' => $stats['remaining']
+                    'processed' => $processed
+                ]);
+            }
+
+            // Получаем статистику очереди отдельно
+            $stats = $this->queueManager->getStats();
+            if (isset($stats['pending']) && $stats['pending'] > 0) {
+                $this->logger->info('AdminOffboard: Jobs remaining in queue', [
+                    'pending' => $stats['pending']
                 ]);
             }
         } catch (\Exception $e) {
