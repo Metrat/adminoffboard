@@ -88,3 +88,15 @@ All notable changes to this project will be documented in this file.
 ### Changed
 - Version bumped to 0.2.6
 - Updated signature.json with new certificates
+
+## [0.2.7] - 2026-09-01
+
+### Added
+- Web interface with 6 pages (Dashboard, Offboard Users, Bulk Operations, Audit Logs, Queue Management, Settings)
+- Dashboard API endpoint
+- API calls for Disable, Wipe, Delete Tokens buttons
+- Bulk operations via web interface
+- Queue processing via web interface
+- User status (enabled/disabled) display
+- DisplayName in user list
+- CSP-safe event handlers
