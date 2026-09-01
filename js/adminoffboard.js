@@ -3,7 +3,22 @@
 
     console.log('AdminOffboard: Starting');
 
-    function apiRequest(endpoint) {
+    window.apiPost = function(endpoint, data) {
+        var url = OC.generateUrl('/apps/adminoffboard/api/v1' + endpoint);
+        return fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'requesttoken': OC.requestToken
+            },
+            body: JSON.stringify(data)
+        }).then(function(response) {
+            return response.json();
+        });
+    }
+
+    window.apiRequest = function(endpoint) {
         var url = OC.generateUrl('/apps/adminoffboard/api/v1' + endpoint);
         return fetch(url, {
             headers: {
@@ -76,42 +91,136 @@
 
     window.disableUser = function(userId) {
         if (confirm('Disable user ' + userId + '?')) {
-            alert('TODO: API call to disable ' + userId);
+            apiPost('/users/disable', { user_ids: [userId] }).then(function(response) {
+                if (response.success) {
+                    alert('User ' + userId + ' disabled successfully');
+                    renderOffboardUsers();
+                } else {
+                    alert('Error: ' + response.message);
+                }
+            }).catch(function(error) {
+                alert('Error disabling user: ' + error.message);
+            });
         }
     };
     
     window.remoteWipeUser = function(userId) {
-        if (confirm('Remote wipe user ' + userId + '?')) {
-            alert('TODO: API call to remote wipe ' + userId);
+        if (confirm('Remote wipe user ' + userId + '? This will delete all tokens and send wipe signal.')) {
+            apiPost('/users/' + userId + '/wipe', {}).then(function(response) {
+                if (response.success) {
+                    alert('Remote wipe initiated for ' + userId);
+                    renderOffboardUsers();
+                } else {
+                    alert('Error: ' + response.message);
+                }
+            }).catch(function(error) {
+                alert('Error remote wiping: ' + error.message);
+            });
         }
     };
     
     window.bulkDisableUsers = function() {
         var users = document.getElementById('bulk-users').value.split('\n').filter(function(u) { return u.trim(); });
-        alert('TODO: Disable ' + users.length + ' users');
+        if (users.length === 0) {
+            alert('Please enter at least one user ID');
+            return;
+        }
+        if (confirm('Disable ' + users.length + ' users?')) {
+            apiPost('/users/disable', { user_ids: users }).then(function(response) {
+                if (response.success) {
+                    alert('Disabled ' + users.length + ' users');
+                    document.getElementById('bulk-users').value = '';
+                } else {
+                    alert('Error: ' + response.message);
+                }
+            }).catch(function(error) {
+                alert('Error: ' + error.message);
+            });
+        }
     };
     
     window.bulkDeleteTokens = function() {
         var users = document.getElementById('bulk-token-users').value.split('\n').filter(function(u) { return u.trim(); });
-        alert('TODO: Delete tokens for ' + users.length + ' users');
+        if (users.length === 0) {
+            alert('Please enter at least one user ID');
+            return;
+        }
+        if (confirm('Delete tokens for ' + users.length + ' users?')) {
+            apiPost('/users/tokens', { user_ids: users }).then(function(response) {
+                if (response.success) {
+                    alert('Deleted tokens for ' + users.length + ' users');
+                    document.getElementById('bulk-token-users').value = '';
+                } else {
+                    alert('Error: ' + response.message);
+                }
+            }).catch(function(error) {
+                alert('Error: ' + error.message);
+            });
+        }
     };
     
     window.bulkRemoteWipe = function() {
         var users = document.getElementById('bulk-wipe-users').value.split('\n').filter(function(u) { return u.trim(); });
-        alert('TODO: Remote wipe ' + users.length + ' users');
+        if (users.length === 0) {
+            alert('Please enter at least one user ID');
+            return;
+        }
+        if (confirm('Remote wipe ' + users.length + ' users? This will delete all tokens.')) {
+            var promises = [];
+            for (var i = 0; i < users.length; i++) {
+                promises.push(apiPost('/users/' + users[i] + '/wipe', {}));
+            }
+            Promise.all(promises).then(function(results) {
+                var successCount = 0;
+                for (var i = 0; i < results.length; i++) {
+                    if (results[i].success) successCount++;
+                }
+                alert('Remote wipe completed for ' + successCount + '/' + users.length + ' users');
+                document.getElementById('bulk-wipe-users').value = '';
+            }).catch(function(error) {
+                alert('Error: ' + error.message);
+            });
+        }
     };
 
     window.processQueue = function() {
-        alert('TODO: Process next job');
+        apiPost('/queue/process', {}).then(function(response) {
+            if (response.success) {
+                alert('Queue processed');
+                renderQueue();
+            } else {
+                alert('Error: ' + response.message);
+            }
+        }).catch(function(error) {
+            alert('Error: ' + error.message);
+        });
     };
     
     window.processAllQueue = function() {
-        alert('TODO: Process all jobs');
+        apiPost('/queue/process-all', {}).then(function(response) {
+            if (response.success) {
+                alert('All jobs processed');
+                renderQueue();
+            } else {
+                alert('Error: ' + response.message);
+            }
+        }).catch(function(error) {
+            alert('Error: ' + error.message);
+        });
     };
 
     window.deleteTokens = function(userId) {
-        if (confirm('Delete tokens for user ' + userId + '?')) {
-            alert('TODO: API call to delete tokens for ' + userId);
+        if (confirm('Delete all tokens for user ' + userId + '?')) {
+            apiPost('/users/tokens', { user_ids: [userId] }).then(function(response) {
+                if (response.success) {
+                    alert('Tokens deleted for ' + userId);
+                    renderOffboardUsers();
+                } else {
+                    alert('Error: ' + response.message);
+                }
+            }).catch(function(error) {
+                alert('Error deleting tokens: ' + error.message);
+            });
         }
     };
 
@@ -379,9 +488,9 @@
                     html += '<td style="padding:10px 12px; color:#333; font-weight:500;">' + userId + '</td>';
                     html += '<td style="padding:10px 12px;"><span style="color:' + statusColor + '; font-weight:500;">' + status + '</span></td>';
                     html += '<td style="padding:10px 12px;">';
-                    html += '<button onclick="disableUser(\'' + userId + '\')" style="padding:6px 12px; background:#f44336; color:#fff; border:none; border-radius:4px; cursor:pointer; margin-right:5px; font-size:12px;">Disable</button>';
-                    html += '<button onclick="remoteWipeUser(\'' + userId + '\')" style="padding:6px 12px; background:#ff9800; color:#fff; border:none; border-radius:4px; cursor:pointer; margin-right:5px; font-size:12px;">Wipe</button>';
-                    html += '<button onclick="deleteTokens(\'' + userId + '\')" style="padding:6px 12px; background:#2196f3; color:#fff; border:none; border-radius:4px; cursor:pointer; font-size:12px;">Delete Tokens</button>';
+                    html += '<button data-action="disable" data-userid="' + userId + '" style="padding:6px 12px; background:#f44336; color:#fff; border:none; border-radius:4px; cursor:pointer; margin-right:5px; font-size:12px;">Disable</button>';
+                    html += '<button data-action="wipe" data-userid="' + userId + '" style="padding:6px 12px; background:#ff9800; color:#fff; border:none; border-radius:4px; cursor:pointer; margin-right:5px; font-size:12px;">Wipe</button>';
+                    html += '<button data-action="tokens" data-userid="' + userId + '" style="padding:6px 12px; background:#2196f3; color:#fff; border:none; border-radius:4px; cursor:pointer; font-size:12px;">Delete Tokens</button>';
                     html += '</td></tr>';
                     count++;
                 }
@@ -404,6 +513,23 @@
                         for (var i = 0; i < rows.length; i++) {
                             var userId = rows[i].getAttribute('data-userid').toLowerCase();
                             rows[i].style.display = userId.indexOf(filter) > -1 ? '' : 'none';
+                        }
+                    });
+                }
+
+                // Добавить обработчики для кнопок
+                var actionButtons = document.querySelectorAll('button[data-action]');
+                for (var j = 0; j < actionButtons.length; j++) {
+                    actionButtons[j].addEventListener('click', function(e) {
+                        var action = this.getAttribute('data-action');
+                        var userId = this.getAttribute('data-userid');
+                        
+                        if (action === 'disable') {
+                            window.disableUser(userId);
+                        } else if (action === 'wipe') {
+                            window.remoteWipeUser(userId);
+                        } else if (action === 'tokens') {
+                            window.deleteTokens(userId);
                         }
                     });
                 }

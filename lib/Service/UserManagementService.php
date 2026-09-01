@@ -191,9 +191,21 @@ class UserManagementService
         // Apply pagination
         $users = array_slice($users, $offset, $limit);
 
+        // Convert to array with status
+        $userData = [];
+        foreach ($users as $user) {
+            $uid = $user->getUID();
+            $userData[$uid] = [
+                'userId' => $uid,
+                'displayName' => $user->getDisplayName(),
+                'enabled' => $user->isEnabled(),
+                'lastLogin' => $user->getLastLogin(),
+            ];
+        }
+
         return [
-            'users' => $users,
-            'count' => count($users)
+            'users' => $userData,
+            'count' => count($userData)
         ];
     }
 
