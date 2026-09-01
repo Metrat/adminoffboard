@@ -98,6 +98,30 @@ class ApiController extends Controller
      * 
      * Get user statistics
      */
+    /**
+     * Get dashboard data
+     */
+    public function getDashboard(): JSONResponse
+    {
+        try {
+            $this->ensureAdmin();
+
+            $userStats = $this->userManagementService->getUserStats();
+            $auditStats = $this->auditService->getStats();
+            $queueStats = $this->queueManager->getStats();
+            $recentActivity = $this->auditService->getRecentLogs(5);
+
+            return ApiResponse::success([
+                'users' => $userStats,
+                'audit' => $auditStats,
+                'queue' => $queueStats,
+                'recentActivity' => $recentActivity,
+            ]);
+        } catch (\Exception $e) {
+            return ApiResponse::error($e->getMessage(), 500);
+        }
+    }
+
     public function getUserStats(): JSONResponse
     {
         try {
@@ -500,7 +524,7 @@ class ApiController extends Controller
         // Check if user is admin
         // In Nextcloud, admin check is done via groups or app config
         // This is a simplified check
-        $isAdmin = \OC::$server->getGroupManager()->isAdmin($user->getUID());
+        $isAdmin = \OC::$server->get(\OCP\IGroupManager::class)->isAdmin($user->getUID());
         if (!$isAdmin) {
             throw new \Exception('Admin privileges required', 403);
         }

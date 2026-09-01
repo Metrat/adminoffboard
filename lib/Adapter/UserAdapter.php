@@ -122,8 +122,9 @@ class UserAdapter
     /**
      * Get users by search term
      */
-    public function searchUsers(string $search, int $limit = 100): array
+    public function searchUsers(string $search = '', int $limit = 50, int $offset = 0): array
     {
-        return $this->userManager->search($search, $limit);
+        $users = $this->userManager->search($search, $limit + $offset);
+        return array_slice($users, $offset);
     }
 }

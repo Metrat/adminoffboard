@@ -138,6 +138,22 @@ class AuditLogRepository
     }
 
     /**
+     * Count all audit logs
+     */
+    public function countAll(): int
+    {
+        return $this->mapper->countAll();
+    }
+
+    /**
+     * Count recent audit logs
+     */
+    public function countRecent(int $since): int
+    {
+        return $this->mapper->countRecent($since);
+    }
+
+    /**
      * Get audit statistics
      */
     public function getStats(): array

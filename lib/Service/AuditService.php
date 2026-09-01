@@ -160,4 +160,20 @@ class AuditService
 
         return $this->repository->countAll();
     }
+
+    /**
+     * Get audit statistics
+     */
+    public function getStats(): array
+    {
+        return $this->repository->getStats();
+    }
+
+    /**
+     * Get recent audit logs
+     */
+    public function getRecentLogs(int $limit = 5): array
+    {
+        return $this->repository->getLogs($limit, 0);
+    }
 }

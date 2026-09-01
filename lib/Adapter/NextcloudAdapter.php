@@ -82,6 +82,14 @@ class NextcloudAdapter
     }
 
     /**
+     * Search users with pagination
+     */
+    public function searchUsers(string $search = '', int $limit = 50, int $offset = 0): array
+    {
+        return $this->userAdapter->searchUsers($search, $limit, $offset);
+    }
+
+    /**
      * Delete all tokens for a user
      */
     public function deleteAllTokens(string $userId): bool

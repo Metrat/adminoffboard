@@ -28,6 +28,7 @@ use OCP\AppFramework\Bootstrap\IBootstrap;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 use OCP\AppFramework\Bootstrap\IBootContext;
 use OCP\IConfig;
+use OCP\IRequest;
 use OCP\IDBConnection;
 use OCP\IUserManager;
 use OCP\IUserSession;
@@ -98,6 +99,16 @@ class Application extends App implements IBootstrap
         });
         $context->registerService(JobProcessor::class, function($c) {
             return new JobProcessor($c->get(JobRepository::class), $c->get(AuditLogger::class), $c->get(LoggerFactory::class)->getLogger(), $c->get(NextcloudAdapter::class));
+        });
+
+        // Register PageController for web interface
+        $context->registerService(\OCA\AdminOffboard\Controller\PageController::class, function($c) {
+            return new \OCA\AdminOffboard\Controller\PageController(
+                self::APP_ID,
+                $c->get(IRequest::class),
+                $c->get(IUserSession::class),
+                $c->get(AppConfig::class)
+            );
         });
 
         // Register background job for queue processing

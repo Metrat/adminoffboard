@@ -140,11 +140,11 @@ class AuditLogMapper extends QBMapper
     public function countByAction(string $action): int
     {
         $qb = $this->db->getQueryBuilder();
-        $qb->select($qb->expr()->count('id', 'count'))
+        $qb->select($qb->createFunction('COUNT(id)'))
             ->from($this->getTableName())
             ->where($qb->expr()->eq('action', $qb->createNamedParameter($action)));
 
-        $result = $qb->executeStatement();
+        $result = $qb->executeQuery();
         $row = $result->fetch();
         $result->closeCursor();
 
@@ -157,11 +157,11 @@ class AuditLogMapper extends QBMapper
     public function countByUser(string $userId): int
     {
         $qb = $this->db->getQueryBuilder();
-        $qb->select($qb->expr()->count('id', 'count'))
+        $qb->select($qb->createFunction('COUNT(id)'))
             ->from($this->getTableName())
             ->where($qb->expr()->eq('user_id', $qb->createNamedParameter($userId)));
 
-        $result = $qb->executeStatement();
+        $result = $qb->executeQuery();
         $row = $result->fetch();
         $result->closeCursor();
 
@@ -174,10 +174,10 @@ class AuditLogMapper extends QBMapper
     public function countAll(): int
     {
         $qb = $this->db->getQueryBuilder();
-        $qb->select($qb->expr()->count('id', 'count'))
+        $qb->select($qb->createFunction('COUNT(id)'))
             ->from($this->getTableName());
 
-        $result = $qb->executeStatement();
+        $result = $qb->executeQuery();
         $row = $result->fetch();
         $result->closeCursor();
 
@@ -191,11 +191,11 @@ class AuditLogMapper extends QBMapper
     {
         $cutoff = time() - $seconds;
         $qb = $this->db->getQueryBuilder();
-        $qb->select($qb->expr()->count('id', 'count'))
+        $qb->select($qb->createFunction('COUNT(id)'))
             ->from($this->getTableName())
             ->where($qb->expr()->gte('timestamp', $qb->createNamedParameter($cutoff)));
 
-        $result = $qb->executeStatement();
+        $result = $qb->executeQuery();
         $row = $result->fetch();
         $result->closeCursor();
 

@@ -66,3 +66,25 @@ All notable changes to this project will be documented in this file.
 
 - 6 console commands
 - Basic device management
+
+## [0.2.6] - 2026-09-01
+
+### Added
+- Web interface with 6 pages (Dashboard, Offboard Users, Bulk Operations, Audit Logs, Queue Management, Settings)
+- Dashboard API endpoint (`/api/v1/dashboard`)
+- Real-time user statistics, audit logs, and queue stats in web UI
+- Hover effects and responsive design for tables
+- Search and filter functionality for audit logs and users
+
+### Fixed
+- PageController registration in NC34 (registerService)
+- Web routes for all pages
+- `getGroupManager()` → `get(IGroupManager::class)` in ApiController
+- `searchUsers()` method in NextcloudAdapter and UserAdapter
+- `countAll()` and `countRecent()` methods in AuditLogRepository
+- `executeStatement()` → `executeQuery()` for SELECT queries in AuditLogMapper
+- `expr()->count()` → `createFunction('COUNT(id)')` for MySQL compatibility
+
+### Changed
+- Version bumped to 0.2.6
+- Updated signature.json with new certificates

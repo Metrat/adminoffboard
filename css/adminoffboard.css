@@ -467,3 +467,52 @@
         background: var(--color-main-background);
     }
 }
+/* Full width content */
+#adminoffboard-content {
+    width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+}
+
+#adminoffboard-content > div {
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
+/* Force full width for content */
+#adminoffboard-content {
+    width: calc(100% - 280px) !important;
+    min-width: 500px !important;
+    flex: 1 1 auto !important;
+    display: block !important;
+}
+
+#adminoffboard-content > div {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+/* Fix for empty pages */
+#adminoffboard-content h2 {
+    width: 100% !important;
+    display: block !important;
+}
+
+/* Table hover effect */
+#adminoffboard-content table tbody tr:hover {
+    background: #e3f2fd !important;
+    transition: background 0.2s ease;
+}
+
+#adminoffboard-content table tbody tr:hover td {
+    color: #1565c0 !important;
+}
+
+/* Buttons hover */
+#adminoffboard-content button:hover {
+    opacity: 0.85;
+    transform: translateY(-1px);
+    transition: all 0.2s ease;
+}

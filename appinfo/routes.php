@@ -4,7 +4,34 @@ declare(strict_types=1);
 
 return [
     'routes' => [
+        // Web routes for PageController
+        [
+            'name' => 'page#index',
+            'url' => '/',
+            'verb' => 'GET',
+        ],
+        [
+            'name' => 'page#dashboard',
+            'url' => '/dashboard',
+            'verb' => 'GET',
+        ],
+        [
+            'name' => 'page#offboard',
+            'url' => '/offboard',
+            'verb' => 'GET',
+        ],
+        [
+            'name' => 'page#settings',
+            'url' => '/settings',
+            'verb' => 'GET',
+        ],
+        
         // API routes - version 1
+        [
+            'name' => 'Api#getDashboard',
+            'url' => '/api/v1/dashboard',
+            'verb' => 'GET',
+        ],
         [
             'name' => 'Api#getUsers',
             'url' => '/api/v1/users',
