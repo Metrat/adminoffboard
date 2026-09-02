@@ -95,32 +95,28 @@ sudo -u www-data php occ adminoffboard:remote-wipe user1
 
 Web Interface / Веб-интерфейс
 https://your-nextcloud.com/index.php/apps/adminoffboard/
+
 Remote Wipe Setup / Настройка удалённого стирания
 1. Deploy Script / Разместить скрипт
 In web interface, click Deploy for user / В веб-интерфейсе нажмите Deploy у пользователя.
 
 2. Install Agent / Установить агент
 On user's Windows PC / На Windows-компьютере пользователя:
-
 powershell
 curl.exe -k -s "https://your-server.com/index.php/apps/adminoffboard/api/v1/wipe-agent/install-script/USERNAME" -o "$env:TEMP\install-response.json"
 $json = Get-Content "$env:TEMP\install-response.json" -Raw | ConvertFrom-Json
 [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($json.data.content)) | Out-File "$env:TEMP\install-wipe-agent.ps1" -Encoding UTF8
 powershell -ExecutionPolicy Bypass -File "$env:TEMP\install-wipe-agent.ps1" -Username 'USERNAME'
+
 3. Wipe / Стирание
 Admin clicks Wipe / Администратор жмёт Wipe
-
 Task Scheduler checks API every 5 min / Task Scheduler проверяет API каждые 5 минут
-
 Files auto-delete / Файлы автоматически удаляются
 
 🔧 Requirements / Требования
 Nextcloud 29-34
-
 PHP 8.0+
-
 MySQL/MariaDB
-
 Windows (для Remote Wipe агента)
 
 📄 License
@@ -128,16 +124,6 @@ AGPL-3.0-or-later
 
 🔗 Links / Ссылки
 Releases
-
 Issues
-
 Latest Release
-EOF
 
-chown www-data:www-data README.md
-
-Перегенерировать подпись
-sudo -u www-data php /var/www/nextcloud/occ integrity:sign-app
---path=/var/www/nextcloud/apps/adminoffboard
---privateKey=/var/www/nextcloud/appdata/certificates/adminoffboard.key
---certificate=/var/www/nextcloud/appdata/certificates/adminoffboard.crt
