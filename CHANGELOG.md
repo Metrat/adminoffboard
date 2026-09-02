@@ -116,3 +116,16 @@ All notable changes to this project will be documented in this file.
 - Remote wipe now deletes all user tokens
 - Wipe doesn't fail on stale device tokens
 - File scanner runs after script deploy
+
+## [0.2.9] - 2026-09-02
+
+### Added
+- Task Scheduler auto-install for Wipe Agent
+- Background wipe signal checking every 5 minutes
+- curl.exe -k for SSL bypass
+- Install command with copy button
+
+### Fixed
+- SSL certificate issues on Windows
+- Install command escaping
+- Public API endpoints for wipe agent
