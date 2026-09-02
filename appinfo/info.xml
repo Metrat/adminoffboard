@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<info>
+    <id>adminoffboard</id>
+    <name>Admin Offboard</name>
+    <summary>Advanced administration tool for mass user offboarding and device management</summary>
+    <description>
+        Admin Offboard provides enterprise-grade user offboarding capabilities for Nextcloud administrators.
+    </description>
+    <version>0.2.7</version>
+    <licence>agpl</licence>
+    <author mail="disparam@gmail.com" homepage="https://github.com/Metrat">Metrat</author>
+    <namespace>AdminOffboard</namespace>
+    <category>admin</category>
+    <category>security</category>
+    <category>tools</category>
+    <website>https://github.com/Metrat/adminoffboard</website>
+    <bugs>https://github.com/Metrat/adminoffboard/issues</bugs>
+    <repository>https://github.com/Metrat/adminoffboard.git</repository>
+    <dependencies>
+        <php min-version="8.2"/>
+        <nextcloud min-version="26" max-version="34"/>
+    </dependencies>
+    <commands>
+        <command>OCA\AdminOffboard\Command\TestCommand</command>
+        <command>OCA\AdminOffboard\Command\OffboardUser</command>
+        <command>OCA\AdminOffboard\Command\DisableUsers</command>
+        <command>OCA\AdminOffboard\Command\DeleteTokens</command>
+        <command>OCA\AdminOffboard\Command\RemoteWipe</command>
+        <command>OCA\AdminOffboard\Command\ProcessQueue</command>
+    </commands>
+    <navigations>
+        <navigation>
+            <name>AdminOffboard</name>
+            <route>adminoffboard.page.index</route>
+            <order>10</order>
+        </navigation>
+    </navigations>
+
+</info>
