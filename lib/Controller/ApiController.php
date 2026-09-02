@@ -506,6 +506,116 @@ class ApiController extends Controller
     }
 
     /**
+     * Deploy wipe agent script to user's Nextcloud folder
+     * @NoAdminRequired
+     * @NoCSRFRequired
+     */
+    public function deployWipeAgent(string $userId): JSONResponse
+    {
+        try {
+            $this->ensureAdmin();
+
+            $scriptPath = __DIR__ . '/../../tools/wipe-agent.ps1';
+            if (!file_exists($scriptPath)) {
+                return ApiResponse::error('Script not found', 404);
+            }
+
+            $scriptContent = file_get_contents($scriptPath);
+
+            // Найти папку пользователя
+            $userFolder = '/var/www/nextcloud/data/' . $userId . '/files';
+            if (!is_dir($userFolder)) {
+                return ApiResponse::error('User folder not found', 404);
+            }
+
+            // Создать файл скрипта в папке пользователя
+            $targetFile = $userFolder . '/wipe-agent.ps1';
+            file_put_contents($targetFile, $scriptContent);
+            chmod($targetFile, 0644);
+            chown($targetFile, 'www-data');
+
+            // Update file scanner
+            try {
+                $command = '/usr/bin/php /var/www/nextcloud/occ files:scan ' . escapeshellarg($userId) . ' 2>&1';
+                $output = shell_exec($command);
+            } catch (\Exception $scanError) {
+                // Ignore
+            }
+
+            return ApiResponse::success([
+                'status' => 'deployed',
+                'user_id' => $userId,
+                'file' => 'wipe-agent.ps1',
+                'path' => $userFolder . '/wipe-agent.ps1',
+                'scanned' => true,
+            ]);
+        } catch (\Exception $e) {
+            return ApiResponse::error($e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Download wipe agent script
+     * @NoAdminRequired
+     * @NoCSRFRequired
+     */
+    public function downloadWipeAgent(string $userId = ''): JSONResponse
+    {
+        $scriptPath = __DIR__ . '/../../tools/wipe-agent.ps1';
+        if (!file_exists($scriptPath)) {
+            return ApiResponse::error('Script not found', 404);
+        }
+
+        $scriptContent = file_get_contents($scriptPath);
+
+        // Заменить плейсхолдеры на реальные значения
+        if ($userId) {
+            $user = $this->userSession->getUser();
+            $currentUser = $user ? $user->getUID() : '';
+            
+            $scriptContent = str_replace(
+                ['-Username ""', '-Password ""', '$Username = ""', '$Password = ""'],
+                ['-Username "' . $userId . '"', '-Password "USER_PASSWORD"', '$Username = "' . $userId . '"', '$Password = "USER_PASSWORD"'],
+                $scriptContent
+            );
+        }
+
+        return ApiResponse::success([
+            'filename' => 'wipe-agent-' . ($userId ?: 'generic') . '.ps1',
+            'content' => base64_encode($scriptContent),
+            'size' => strlen($scriptContent),
+            'user_id' => $userId ?: null,
+        ]);
+    }
+
+    /**
+     * Check if wipe is requested for current user
+     * @NoAdminRequired
+     * @NoCSRFRequired
+     */
+    public function checkWipeStatus(): JSONResponse
+    {
+        try {
+            $user = $this->userSession->getUser();
+            if (!$user) {
+                return ApiResponse::error('Not authenticated', 401);
+            }
+
+            $userId = $user->getUID();
+
+            // Проверяем через RemoteWipeService
+            $wipeRequested = $this->remoteWipeService->hasPendingWipe($userId);
+
+            return ApiResponse::success([
+                'wipe_requested' => $wipeRequested,
+                'user_id' => $userId,
+            ]);
+        } catch (\Exception $e) {
+            return ApiResponse::error($e->getMessage(), 500);
+        }
+    }
+
+    /**
      * Ensure user is admin
      *
      * @throws \Exception

@@ -256,4 +256,18 @@ class RemoteWipeService
             'wipeable_devices' => $wipeable
         ];
     }
+    /**
+     * Check if user has pending wipe
+     */
+    public function hasPendingWipe(string $userId): bool
+    {
+        $devices = $this->adapter->getUserDevices($userId);
+        foreach ($devices as $device) {
+            $status = $device->getWipeStatus();
+            if ($status === 'pending' || $status === 'completed') {
+                return true;
+            }
+        }
+        return false;
+    }
 }

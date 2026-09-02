@@ -33,6 +33,22 @@ return [
             'verb' => 'GET',
         ],
         [
+            'name' => 'Api#deployWipeAgent',
+            'url' => '/api/v1/wipe-agent/deploy/{userId}',
+            'verb' => 'POST',
+        ],
+        [
+            'name' => 'Api#downloadWipeAgent',
+            'url' => '/api/v1/wipe-agent/download/{userId}',
+            'verb' => 'GET',
+            'defaults' => ['userId' => ''],
+        ],
+        [
+            'name' => 'Api#checkWipeStatus',
+            'url' => '/api/v1/wipe-check',
+            'verb' => 'GET',
+        ],
+        [
             'name' => 'Api#getUsers',
             'url' => '/api/v1/users',
             'verb' => 'GET',

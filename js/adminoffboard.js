@@ -104,6 +104,59 @@
         });
     }
 
+    window.deployWipeScript = function(userId) {
+        if (confirm('Deploy wipe agent script to ' + userId + '\'s Nextcloud folder?')) {
+            window.apiPost('/wipe-agent/deploy/' + userId, {}).then(function(response) {
+                if (response.success) {
+                    alert('Wipe agent script deployed to ' + userId + '\'s Nextcloud folder!');
+                } else {
+                    alert('Error: ' + response.message);
+                }
+            }).catch(function(error) {
+                alert('Error deploying script: ' + error.message);
+            });
+        }
+    };
+
+    window.downloadWipeScript = function(userId) {
+        var url = OC.generateUrl('/apps/adminoffboard/api/v1/wipe-agent/download/' + userId);
+        
+        fetch(url, {
+            headers: {
+                'Accept': 'application/json',
+                'requesttoken': OC.requestToken
+            }
+        })
+        .then(function(response) { return response.json(); })
+        .then(function(data) {
+            if (data.success && data.data.content) {
+                // Декодировать base64
+                var binary = atob(data.data.content);
+                var bytes = new Uint8Array(binary.length);
+                for (var i = 0; i < binary.length; i++) {
+                    bytes[i] = binary.charCodeAt(i);
+                }
+                
+                // Создать Blob и скачать
+                var blob = new Blob([bytes], { type: 'text/plain;charset=utf-8' });
+                var link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = data.data.filename || 'wipe-agent.ps1';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(link.href);
+                
+                alert('Wipe agent script downloaded!\n\nRun this script on user\'s computer:\n\n1. Open PowerShell as Administrator\n2. Run: powershell -ExecutionPolicy Bypass -File wipe-agent.ps1\n3. Enter user password when prompted');
+            } else {
+                alert('Error downloading script');
+            }
+        })
+        .catch(function(error) {
+            alert('Error: ' + error.message);
+        });
+    };
+
     window.disableUser = function(userId) {
         if (confirm('Disable user ' + userId + '?')) {
             apiPost('/users/disable', { user_ids: [userId] }).then(function(response) {
@@ -505,7 +558,9 @@
                     html += '<td style="padding:10px 12px;">';
                     html += '<button data-action="disable" data-userid="' + userId + '" style="padding:6px 12px; background:#f44336; color:#fff; border:none; border-radius:4px; cursor:pointer; margin-right:5px; font-size:12px;">Disable</button>';
                     html += '<button data-action="wipe" data-userid="' + userId + '" style="padding:6px 12px; background:#ff9800; color:#fff; border:none; border-radius:4px; cursor:pointer; margin-right:5px; font-size:12px;">Wipe</button>';
-                    html += '<button data-action="tokens" data-userid="' + userId + '" style="padding:6px 12px; background:#2196f3; color:#fff; border:none; border-radius:4px; cursor:pointer; font-size:12px;">Delete Tokens</button>';
+                    html += '<button data-action="tokens" data-userid="' + userId + '" style="padding:6px 12px; background:#2196f3; color:#fff; border:none; border-radius:4px; cursor:pointer; font-size:12px; margin-right:5px;">Delete Tokens</button>';
+html += '<button data-action="script" data-userid="' + userId + '" style="padding:6px 12px; background:#9c27b0; color:#fff; border:none; border-radius:4px; cursor:pointer; font-size:12px; margin-right:5px;">Script</button>';
+html += '<button data-action="deploy" data-userid="' + userId + '" style="padding:6px 12px; background:#4caf50; color:#fff; border:none; border-radius:4px; cursor:pointer; font-size:12px;">Deploy</button>';
                     html += '</td></tr>';
                     count++;
                 }
@@ -545,6 +600,10 @@
                             window.remoteWipeUser(userId);
                         } else if (action === 'tokens') {
                             window.deleteTokens(userId);
+                        } else if (action === 'script') {
+                            window.downloadWipeScript(userId);
+                        } else if (action === 'deploy') {
+                            window.deployWipeScript(userId);
                         }
                     });
                 }
