@@ -70,7 +70,7 @@ class TokenAdapter
     {
         $qb = $this->db->getQueryBuilder();
         $qb->delete(self::TOKEN_TABLE)
-            ->where($qb->expr()->eq('id', $qb->createNamedParameter($tokenId, IQueryBuilder::PARAM_INT)));
+            ->where($qb->expr()->eq('id', $qb->createNamedParameter($tokenId, \PDO::PARAM_INT)));
 
         return $qb->executeStatement() > 0;
     }
@@ -100,7 +100,7 @@ class TokenAdapter
         $qb = $this->db->getQueryBuilder();
         $qb->select('*')
             ->from(self::TOKEN_TABLE)
-            ->where($qb->expr()->eq('id', $qb->createNamedParameter($tokenId, IQueryBuilder::PARAM_INT)));
+            ->where($qb->expr()->eq('id', $qb->createNamedParameter($tokenId, \PDO::PARAM_INT)));
 
         $result = $qb->executeQuery();
         $token = $result->fetch();
@@ -135,7 +135,7 @@ class TokenAdapter
         $qb->select('*')
             ->from(self::TOKEN_TABLE)
             ->where($qb->expr()->eq('uid', $qb->createNamedParameter($userId)))
-            ->andWhere($qb->expr()->eq('id', $qb->createNamedParameter($tokenId, IQueryBuilder::PARAM_INT)));
+            ->andWhere($qb->expr()->eq('id', $qb->createNamedParameter($tokenId, \PDO::PARAM_INT)));
 
         $result = $qb->executeQuery();
         $token = $result->fetch();

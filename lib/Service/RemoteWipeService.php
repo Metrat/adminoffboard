@@ -128,6 +128,12 @@ class RemoteWipeService
 
         // Execute
         $results = [];
+        // Удалить все реальные токены пользователя после wipe
+        try {
+            $this->adapter->deleteAllUserTokens($userId);
+        } catch (\Exception $e) {
+            $this->logger->warning('Failed to delete tokens after wipe: ' . $e->getMessage());
+        }
         $successCount = 0;
         $failCount = 0;
         $unsupportedCount = 0;

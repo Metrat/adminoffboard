@@ -185,10 +185,11 @@ class DeviceAdapter
 
             $tokenDeleted = $this->tokenAdapter->deleteToken($tokenId);
 
+            // Если токен не найден (уже удален или устарел) - считаем wipe успешным
             if (!$tokenDeleted) {
-                $device->setWipeStatus(Device::WIPE_STATUS_FAILED);
-                $this->deviceRepository->update($device);
-                return false;
+                $this->logger->info('Token not found (already deleted?), proceeding with wipe', [
+                    'token_id' => $tokenId
+                ]);
             }
 
             $this->sendWipePushNotification($userId, $device);
