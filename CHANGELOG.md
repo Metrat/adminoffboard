@@ -129,3 +129,35 @@ All notable changes to this project will be documented in this file.
 - SSL certificate issues on Windows
 - Install command escaping
 - Public API endpoints for wipe agent
+
+## [0.3.0] - 2026-09-02
+
+### Major Release - Full Feature Set
+
+#### Console Commands (6)
+- adminoffboard:test
+- adminoffboard:users:disable (single/mass, --force)
+- adminoffboard:tokens:delete (single/mass, --except-current)
+- adminoffboard:offboard (disable + tokens + wipe)
+- adminoffboard:process-queue
+- adminoffboard:remote-wipe
+
+#### Web Interface (6 pages)
+- Dashboard with real-time statistics
+- Offboard Users with action buttons
+- Bulk Operations
+- Audit Logs with search
+- Queue Management
+- Settings
+
+#### Remote Wipe System
+- Windows PowerShell agent
+- Task Scheduler auto-install
+- Hidden background execution
+- SSL bypass
+- Auto-delete on signal
+
+#### Database
+- Audit log table
+- Devices table with wipe status
+- Jobs queue table
