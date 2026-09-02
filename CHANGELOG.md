@@ -100,3 +100,19 @@ All notable changes to this project will be documented in this file.
 - User status (enabled/disabled) display
 - DisplayName in user list
 - CSP-safe event handlers
+
+## [0.2.8] - 2026-09-02
+
+### Added
+- Wipe Agent system for Windows clients
+- Deploy script to user's Nextcloud folder
+- Download wipe agent script
+- Automatic files:scan after deploy
+- PowerShell agent for local file deletion
+- Task Scheduler installation script
+- checkWipeStatus API endpoint
+
+### Fixed
+- Remote wipe now deletes all user tokens
+- Wipe doesn't fail on stale device tokens
+- File scanner runs after script deploy
