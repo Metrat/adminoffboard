@@ -33,9 +33,19 @@ return [
             'verb' => 'GET',
         ],
         [
+            'name' => 'Api#getInstallCommand',
+            'url' => '/api/v1/wipe-agent/install-command/{userId}',
+            'verb' => 'GET',
+        ],
+        [
             'name' => 'Api#deployWipeAgent',
             'url' => '/api/v1/wipe-agent/deploy/{userId}',
             'verb' => 'POST',
+        ],
+        [
+            'name' => 'Api#downloadInstaller',
+            'url' => '/api/v1/wipe-agent/install-script/{userId}',
+            'verb' => 'GET',
         ],
         [
             'name' => 'Api#downloadWipeAgent',
@@ -45,8 +55,9 @@ return [
         ],
         [
             'name' => 'Api#checkWipeStatus',
-            'url' => '/api/v1/wipe-check',
+            'url' => '/api/v1/wipe-check/{userId}',
             'verb' => 'GET',
+            'defaults' => ['userId' => ''],
         ],
         [
             'name' => 'Api#getUsers',

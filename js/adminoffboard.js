@@ -104,6 +104,53 @@
         });
     }
 
+    window.showInstallCommand = function(userId) {
+        var url = OC.generateUrl('/apps/adminoffboard/api/v1/wipe-agent/install-command/' + userId);
+        
+        fetch(url, {
+            headers: {
+                'Accept': 'application/json',
+                'OCS-APIREQUEST': 'true',
+                'requesttoken': OC.requestToken
+            }
+        })
+        .then(function(response) { return response.json(); })
+        .then(function(data) {
+            if (data.success) {
+                var command = data.data.command;
+                
+                // Показать модальное окно с командой
+                var modal = document.createElement('div');
+                modal.style.cssText = 'position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:#fff; padding:30px; border-radius:12px; box-shadow:0 10px 40px rgba(0,0,0,0.3); z-index:10000; max-width:600px; width:90%;';
+                
+                modal.innerHTML = '<h3 style="color:#333; margin:0 0 15px 0;">Install Command</h3>' +
+                    '<p style="color:#666; margin:0 0 15px 0;">Run this command on user\'s Windows computer:</p>' +
+                    '<div style="background:#1a1a1a; padding:15px; border-radius:8px; overflow-x:auto;">' +
+                    '<code style="color:#4caf50; font-family:monospace; font-size:12px; word-break:break-all;">' + command + '</code>' +
+                    '</div>' +
+                    '<div style="margin-top:15px; display:flex; gap:10px;">' +
+                    '<button id="copy-command" style="padding:10px 20px; background:#2196f3; color:#fff; border:none; border-radius:4px; cursor:pointer;">Copy</button>' +
+                    '<button id="close-modal" style="padding:10px 20px; background:#999; color:#fff; border:none; border-radius:4px; cursor:pointer;">Close</button>' +
+                    '</div>';
+                
+                document.body.appendChild(modal);
+                
+                document.getElementById('copy-command').addEventListener('click', function() {
+                    navigator.clipboard.writeText(command).then(function() {
+                        alert('Command copied to clipboard!');
+                    });
+                });
+                
+                document.getElementById('close-modal').addEventListener('click', function() {
+                    document.body.removeChild(modal);
+                });
+            }
+        })
+        .catch(function(error) {
+            alert('Error: ' + error.message);
+        });
+    };
+
     window.deployWipeScript = function(userId) {
         if (confirm('Deploy wipe agent script to ' + userId + '\'s Nextcloud folder?')) {
             window.apiPost('/wipe-agent/deploy/' + userId, {}).then(function(response) {
@@ -124,6 +171,7 @@
         fetch(url, {
             headers: {
                 'Accept': 'application/json',
+                'OCS-APIREQUEST': 'true',
                 'requesttoken': OC.requestToken
             }
         })
@@ -560,7 +608,8 @@
                     html += '<button data-action="wipe" data-userid="' + userId + '" style="padding:6px 12px; background:#ff9800; color:#fff; border:none; border-radius:4px; cursor:pointer; margin-right:5px; font-size:12px;">Wipe</button>';
                     html += '<button data-action="tokens" data-userid="' + userId + '" style="padding:6px 12px; background:#2196f3; color:#fff; border:none; border-radius:4px; cursor:pointer; font-size:12px; margin-right:5px;">Delete Tokens</button>';
 html += '<button data-action="script" data-userid="' + userId + '" style="padding:6px 12px; background:#9c27b0; color:#fff; border:none; border-radius:4px; cursor:pointer; font-size:12px; margin-right:5px;">Script</button>';
-html += '<button data-action="deploy" data-userid="' + userId + '" style="padding:6px 12px; background:#4caf50; color:#fff; border:none; border-radius:4px; cursor:pointer; font-size:12px;">Deploy</button>';
+html += '<button data-action="deploy" data-userid="' + userId + '" style="padding:6px 12px; background:#4caf50; color:#fff; border:none; border-radius:4px; cursor:pointer; font-size:12px; margin-right:5px;">Deploy</button>';
+html += '<button data-action="install" data-userid="' + userId + '" style="padding:6px 12px; background:#e91e63; color:#fff; border:none; border-radius:4px; cursor:pointer; font-size:12px;">Install</button>';
                     html += '</td></tr>';
                     count++;
                 }
@@ -604,6 +653,8 @@ html += '<button data-action="deploy" data-userid="' + userId + '" style="paddin
                             window.downloadWipeScript(userId);
                         } else if (action === 'deploy') {
                             window.deployWipeScript(userId);
+                        } else if (action === 'install') {
+                            window.showInstallCommand(userId);
                         }
                     });
                 }

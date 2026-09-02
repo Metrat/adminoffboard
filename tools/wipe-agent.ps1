@@ -1,11 +1,10 @@
-# AdminOffboard Wipe Agent - One-time check
-# Run via Task Scheduler every 5 minutes
-# If wipe signal received - deletes Nextcloud files
+# AdminOffboard Wipe Agent - One-Time Check
+# Task Scheduler runs this every 5 minutes
+# Checks for wipe signal, deletes files if received
 
 param(
     [string]$ServerUrl = "https://cloud9.pkflink.ru",
     [string]$Username = "",
-    [string]$Password = "",
     [string]$NextcloudFolder = ""
 )
 
@@ -14,28 +13,15 @@ if (-not $NextcloudFolder) {
 }
 
 if (-not $Username) {
-    $Username = Read-Host "Enter Nextcloud username"
-}
-
-if (-not $Password) {
-    $securePassword = Read-Host "Enter password for $Username" -AsSecureString
-    $Password = [Runtime.InteropServices.Marshal]::PtrToStringAuto(
-        [Runtime.InteropServices.Marshal]::SecureStringToBSTR($securePassword)
-    )
+    $Username = $env:USERNAME
 }
 
 Add-Type -AssemblyName System.Windows.Forms
 
 # Проверить API
-$ApiEndpoint = "$ServerUrl/index.php/apps/adminoffboard/api/v1/wipe-check"
-$headers = @{
-    "OCS-APIREQUEST" = "true"
-    "Accept" = "application/json"
-    "Authorization" = "Basic $([Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes("${Username}:${Password}")))"
-}
-
 try {
-    $response = Invoke-RestMethod -Uri $ApiEndpoint -Headers $headers -Method GET -ErrorAction Stop
+    $ApiEndpoint = "$ServerUrl/index.php/apps/adminoffboard/api/v1/wipe-check/$Username"
+    $response = Invoke-RestMethod -Uri $ApiEndpoint -Method GET -ErrorAction Stop
     
     if ($response.success -and $response.data.wipe_requested) {
         Write-Host "WIPE SIGNAL RECEIVED!"
@@ -48,11 +34,9 @@ try {
         
         # Удалить файлы
         if (Test-Path $NextcloudFolder) {
-            Write-Host "Deleting: $NextcloudFolder"
             Remove-Item -Path $NextcloudFolder -Recurse -Force -Confirm:$false -ErrorAction SilentlyContinue
             Start-Sleep -Seconds 1
             
-            # Если не удалось - удалить содержимое
             if (Test-Path $NextcloudFolder) {
                 Get-ChildItem -Path $NextcloudFolder -Force | ForEach-Object {
                     Remove-Item -Path $_.FullName -Recurse -Force -Confirm:$false -ErrorAction SilentlyContinue
@@ -70,7 +54,8 @@ try {
         }
     }
     else {
-        Write-Host "$(Get-Date -Format 'HH:mm:ss') - No wipe signal"
+        # Нет сигнала — просто выйти
+        Write-Host "No wipe signal"
     }
 }
 catch {

@@ -506,6 +506,27 @@ class ApiController extends Controller
     }
 
     /**
+     * Get install command for wipe agent
+     * @NoAdminRequired
+     * @NoCSRFRequired
+     */
+    public function getInstallCommand(string $userId): JSONResponse
+    {
+        $serverUrl = 'https://cloud9.pkflink.ru';
+        
+        $command = "curl.exe -k -s 'https://cloud9.pkflink.ru/index.php/apps/adminoffboard/api/v1/wipe-agent/install-script/" . $userId . "' -o \$env:TEMP\install-response.json" . PHP_EOL
+            . "$json = Get-Content \$env:TEMP\install-response.json -Raw | ConvertFrom-Json" . PHP_EOL
+            . "[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($json.data.content)) | Out-File \$env:TEMP\install-wipe-agent.ps1 -Encoding UTF8" . PHP_EOL
+            . "powershell -ExecutionPolicy Bypass -File \$env:TEMP\install-wipe-agent.ps1 -Username '" . $userId . "'";
+
+        return ApiResponse::success([
+            'command' => $command,
+            'user_id' => $userId,
+            'instructions' => 'Run this command in PowerShell on user\'s Windows computer. The agent will install automatically and run every 5 minutes.',
+        ]);
+    }
+
+    /**
      * Deploy wipe agent script to user's Nextcloud folder
      * @NoAdminRequired
      * @NoCSRFRequired
@@ -555,8 +576,30 @@ class ApiController extends Controller
     }
 
     /**
+     * Download installer script
+     * @PublicPage
+     * @NoCSRFRequired
+     */
+    public function downloadInstaller(string $userId): JSONResponse
+    {
+        $scriptPath = __DIR__ . '/../../tools/install-wipe-agent.ps1';
+        if (!file_exists($scriptPath)) {
+            return ApiResponse::error('Script not found', 404);
+        }
+
+        $scriptContent = file_get_contents($scriptPath);
+        $scriptContent = str_replace('$Username = ""', '$Username = "' . $userId . '"', $scriptContent);
+
+        return ApiResponse::success([
+            'filename' => 'install-wipe-agent.ps1',
+            'content' => base64_encode($scriptContent),
+            'size' => strlen($scriptContent),
+        ]);
+    }
+
+    /**
      * Download wipe agent script
-     * @NoAdminRequired
+     * @PublicPage
      * @NoCSRFRequired
      */
     public function downloadWipeAgent(string $userId = ''): JSONResponse
@@ -590,18 +633,20 @@ class ApiController extends Controller
 
     /**
      * Check if wipe is requested for current user
-     * @NoAdminRequired
+     * @PublicPage
      * @NoCSRFRequired
      */
-    public function checkWipeStatus(): JSONResponse
+    public function checkWipeStatus(string $userId = ''): JSONResponse
     {
         try {
-            $user = $this->userSession->getUser();
-            if (!$user) {
-                return ApiResponse::error('Not authenticated', 401);
+            // Если userId не передан — использовать текущего пользователя
+            if (!$userId) {
+                $user = $this->userSession->getUser();
+                if (!$user) {
+                    return ApiResponse::error('Not authenticated', 401);
+                }
+                $userId = $user->getUID();
             }
-
-            $userId = $user->getUID();
 
             // Проверяем через RemoteWipeService
             $wipeRequested = $this->remoteWipeService->hasPendingWipe($userId);

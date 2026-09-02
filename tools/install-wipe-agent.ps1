@@ -1,38 +1,49 @@
-# Install AdminOffboard Wipe Agent as Windows Scheduled Task
-# Run as Administrator in PowerShell
+# AdminOffboard Wipe Agent Installer
+# Run ONCE to install Task Scheduler job
+# Job checks for wipe signal every 5 minutes
 
 param(
     [string]$Username = "",
     [string]$ServerUrl = "https://cloud9.pkflink.ru"
 )
 
-$ScriptPath = "$PSScriptRoot\wipe-agent.ps1"
-$TaskName = "AdminOffboard Wipe Agent"
-
-if (-not (Test-Path $ScriptPath)) {
-    Write-Host "Error: wipe-agent.ps1 not found in $PSScriptRoot"
-    exit 1
-}
-
 if (-not $Username) {
-    $Username = Read-Host "Enter Nextcloud username"
+    $Username = $env:USERNAME
 }
 
-$securePassword = Read-Host "Enter password for $Username" -AsSecureString
-$Password = [Runtime.InteropServices.Marshal]::PtrToStringAuto(
-    [Runtime.InteropServices.Marshal]::SecureStringToBSTR($securePassword)
-)
+$TaskName = "AdminOffboard Wipe Agent"
+$InstallDir = "$env:ProgramData\AdminOffboard"
+$ScriptPath = "$InstallDir\wipe-agent.ps1"
 
-# Создать действие - запускать скрипт
-$action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-WindowStyle Hidden -ExecutionPolicy Bypass -File `"$ScriptPath`" -Username `"$Username`" -Password `"$Password`" -ServerUrl `"$ServerUrl`""
+# Создать директорию
+if (-not (Test-Path $InstallDir)) {
+    New-Item -Path $InstallDir -ItemType Directory -Force | Out-Null
+}
 
-# Триггер - каждые 5 минут
+# Скачать скрипт
+Write-Host "Downloading wipe agent script..."
+$response = Invoke-RestMethod -Uri "$ServerUrl/index.php/apps/adminoffboard/api/v1/wipe-agent/download/$Username"
+$scriptContent = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($response.data.content))
+[System.IO.File]::WriteAllText($ScriptPath, $scriptContent)
+Write-Host "Script saved to: $ScriptPath"
+
+# Создать Task Scheduler задачу
+Write-Host "Creating Task Scheduler job..."
+
+$action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-WindowStyle Hidden -ExecutionPolicy Bypass -File `"$ScriptPath`" -Username `"$Username`" -ServerUrl `"$ServerUrl`""
 $trigger = New-ScheduledTaskTrigger -Once -At (Get-Date) -RepetitionInterval (New-TimeSpan -Minutes 5)
+$settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -RestartCount 999 -ExecutionTimeLimit (New-TimeSpan -Days 3650) -Hidden
 
-$settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -RestartCount 999 -ExecutionTimeLimit (New-TimeSpan -Days 3650)
+Register-ScheduledTask -TaskName $TaskName -Action $action -Trigger $trigger -Settings $settings -Description "Checks AdminOffboard API for wipe signal every 5 minutes" | Out-Null
 
-Register-ScheduledTask -TaskName $TaskName -Action $action -Trigger $trigger -Settings $settings -Description "Checks AdminOffboard API for wipe signal and deletes Nextcloud files"
-
-Write-Host "✅ Wipe Agent installed!"
-Write-Host "Runs every 5 minutes to check for wipe signal."
-Write-Host "To uninstall: Unregister-ScheduledTask -TaskName '$TaskName'"
+Write-Host ""
+Write-Host "✅ Wipe Agent installed successfully!"
+Write-Host "Task: $TaskName"
+Write-Host "Runs every 5 minutes (hidden)"
+Write-Host ""
+Write-Host "To uninstall:"
+Write-Host "  Unregister-ScheduledTask -TaskName '$TaskName'"
+Write-Host "  Remove-Item -Path '$InstallDir' -Recurse -Force"
+Write-Host ""
+Write-Host "To run manually:"
+Write-Host "  Start-ScheduledTask -TaskName '$TaskName'"
