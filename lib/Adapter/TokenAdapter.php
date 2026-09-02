@@ -60,7 +60,7 @@ class TokenAdapter
         $qb->delete(self::TOKEN_TABLE)
             ->where($qb->expr()->eq('uid', $qb->createNamedParameter($userId)));
 
-        return $qb->executeQuery() > 0;
+        return $qb->executeStatement() > 0;
     }
 
     /**
@@ -72,7 +72,7 @@ class TokenAdapter
         $qb->delete(self::TOKEN_TABLE)
             ->where($qb->expr()->eq('id', $qb->createNamedParameter($tokenId, IQueryBuilder::PARAM_INT)));
 
-        return $qb->executeQuery() > 0;
+        return $qb->executeStatement() > 0;
     }
 
     /**

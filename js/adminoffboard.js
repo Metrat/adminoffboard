@@ -3,6 +3,21 @@
 
     console.log('AdminOffboard: Starting');
 
+    window.apiDelete = function(endpoint, data) {
+        var url = OC.generateUrl('/apps/adminoffboard/api/v1' + endpoint);
+        return fetch(url, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'requesttoken': OC.requestToken
+            },
+            body: JSON.stringify(data || {})
+        }).then(function(response) {
+            return response.json();
+        });
+    }
+
     window.apiPost = function(endpoint, data) {
         var url = OC.generateUrl('/apps/adminoffboard/api/v1' + endpoint);
         return fetch(url, {

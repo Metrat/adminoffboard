@@ -50,7 +50,7 @@ return [
         [
             'name' => 'Api#deleteTokens',
             'url' => '/api/v1/users/tokens',
-            'verb' => 'DELETE',
+            'verb' => 'POST',
         ],
         [
             'name' => 'Api#remoteWipe',
